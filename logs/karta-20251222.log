@@ -1,0 +1,58 @@
+[2025-12-22 19:14:24.064 +00:00 INF]  Using CONNECTION_STRING from environment variable {"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:24.338 +00:00 INF]  Connection string sources - Env: Server=sqlserver,1433;Database=KartaDb;User Id=sa;..., Config: Server=sqlserver,1433;Database=KartaDb;User Id=sa;..., Default: Server=sqlserver,1433;Database=KartaDb;User Id=sa;Password=KartaPassword2024!;TrustServerCertificate=true;MultipleActiveResultSets=true; {"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:24.342 +00:00 INF]  Database connection: Type=SQL Server, ConnectionString=Server=sqlserver,1433;Database=KartaDb;User Id=sa;Password=***;TrustServerCertificate=true;MultipleActiveResultSets=true; {"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:24.375 +00:00 INF]  Registered SQL Server database provider with connection string: Server=sqlserver,1433;Database=KartaDb;User Id=sa;Password=***;TrustServerCertificate=true;MultipleActiveResultSets=true; {"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:25.290 +00:00 INF]  Starting Karta.ba Web API {"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:25.356 +00:00 WRN] Microsoft.AspNetCore.DataProtection.Repositories.FileSystemXmlRepository Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning {"EventId":{"Id":60,"Name":"UsingEphemeralFileSystemLocationInContainer"},"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:25.358 +00:00 INF] Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager User profile is available. Using '/root/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest. {"EventId":{"Id":62,"Name":"UsingProfileAsKeyRepository"},"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:25.417 +00:00 INF] Karta.Service.Services.PaymentMonitorService PaymentMonitorService: Initializing Stripe API key. Env var present: true, Config present: true {"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:25.446 +00:00 INF] Karta.Service.Services.PaymentMonitorService PaymentMonitorService: Stripe API key initialized successfully. Key prefix: sk_test_51 {"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:25.565 +00:00 INF] Karta.WebAPI.Services.DatabaseInitializationService Database initialization service starting... {"MachineName":"6640c5ddf1e1","ThreadId":6}
+[2025-12-22 19:14:25.565 +00:00 INF] Karta.WebAPI.Services.DatabaseInitializationService Waiting 5000ms for database server to be ready... {"MachineName":"6640c5ddf1e1","ThreadId":6}
+[2025-12-22 19:14:25.570 +00:00 WRN] Microsoft.AspNetCore.Hosting.Diagnostics Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:8080'. {"EventId":{"Id":15},"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:25.573 +00:00 INF] Karta.WebAPI.Services.DailyResetService Daily Reset Service started {"MachineName":"6640c5ddf1e1","ThreadId":11}
+[2025-12-22 19:14:25.572 +00:00 INF] Karta.WebAPI.Services.OrderCleanupService OrderCleanupService started. Cleanup interval: "01:00:00", Expiration threshold: "1.00:00:00" {"MachineName":"6640c5ddf1e1","ThreadId":8}
+[2025-12-22 19:14:25.572 +00:00 INF] Karta.WebAPI.Services.EventArchiveService EventArchiveService started. Check interval: "01:00:00" {"MachineName":"6640c5ddf1e1","ThreadId":9}
+[2025-12-22 19:14:25.573 +00:00 INF] Karta.Service.Services.PaymentMonitorService 💳 Payment Monitor Service pokrenuta - provjerava svake 30 sekundi {"MachineName":"6640c5ddf1e1","ThreadId":12}
+[2025-12-22 19:14:25.579 +00:00 INF] Karta.WebAPI.Services.DailyResetService Next reset scheduled at: 2025-12-23 00:00:00 UTC (in 4.8 hours) {"MachineName":"6640c5ddf1e1","ThreadId":11}
+[2025-12-22 19:14:25.767 +00:00 INF] Microsoft.Hosting.Lifetime Now listening on: http://[::]:8080 {"EventId":{"Id":14,"Name":"ListeningOnAddress"},"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:25.769 +00:00 INF] Microsoft.Hosting.Lifetime Application started. Press Ctrl+C to shut down. {"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:25.769 +00:00 INF] Microsoft.Hosting.Lifetime Hosting environment: Development {"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:25.770 +00:00 INF] Microsoft.Hosting.Lifetime Content root path: /app {"MachineName":"6640c5ddf1e1","ThreadId":1}
+[2025-12-22 19:14:28.121 +00:00 INF] Microsoft.AspNetCore.Hosting.Diagnostics Request starting HTTP/1.1 GET http://localhost:8080/ - null null {"EventId":{"Id":1},"RequestId":"0HNI1HP9T6C67:00000001","RequestPath":"/","ConnectionId":"0HNI1HP9T6C67","MachineName":"6640c5ddf1e1","ThreadId":9}
+[2025-12-22 19:14:28.204 +00:00 WRN] Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware Failed to determine the https port for redirect. {"EventId":{"Id":3,"Name":"FailedToDeterminePort"},"RequestId":"0HNI1HP9T6C67:00000001","RequestPath":"/","ConnectionId":"0HNI1HP9T6C67","MachineName":"6640c5ddf1e1","ThreadId":9}
+[2025-12-22 19:14:28.269 +00:00 INF] Microsoft.AspNetCore.Routing.EndpointMiddleware Executing endpoint 'HTTP: GET /' {"EventId":{"Name":"ExecutingEndpoint"},"RequestId":"0HNI1HP9T6C67:00000001","RequestPath":"/","ConnectionId":"0HNI1HP9T6C67","MachineName":"6640c5ddf1e1","ThreadId":9}
+[2025-12-22 19:14:28.281 +00:00 INF] Microsoft.AspNetCore.Routing.EndpointMiddleware Executed endpoint 'HTTP: GET /' {"EventId":{"Id":1,"Name":"ExecutedEndpoint"},"RequestId":"0HNI1HP9T6C67:00000001","RequestPath":"/","ConnectionId":"0HNI1HP9T6C67","MachineName":"6640c5ddf1e1","ThreadId":9}
+[2025-12-22 19:14:28.286 +00:00 INF] Microsoft.AspNetCore.Hosting.Diagnostics Request finished HTTP/1.1 GET http://localhost:8080/ - 200 null text/plain; charset=utf-8 168.525ms {"EventId":{"Id":2},"RequestId":"0HNI1HP9T6C67:00000001","RequestPath":"/","ConnectionId":"0HNI1HP9T6C67","MachineName":"6640c5ddf1e1","ThreadId":9}
+[2025-12-22 19:14:30.579 +00:00 INF] Karta.WebAPI.Services.DatabaseInitializationService Applying database migrations... {"MachineName":"6640c5ddf1e1","ThreadId":11}
+[2025-12-22 19:14:30.586 +00:00 INF] Karta.WebAPI.Services.DatabaseInitializationService Attempt 1/5 to apply database migrations... {"MachineName":"6640c5ddf1e1","ThreadId":11}
+[2025-12-22 19:14:35.121 +00:00 INF] Microsoft.Hosting.Lifetime Application is shutting down... {"MachineName":"6640c5ddf1e1","ThreadId":18}
+[2025-12-22 19:14:35.147 +00:00 INF] Karta.WebAPI.Services.DailyResetService Daily Reset Service is stopping due to cancellation {"MachineName":"6640c5ddf1e1","ThreadId":6}
+[2025-12-22 19:14:35.148 +00:00 INF] Karta.WebAPI.Services.DailyResetService Daily Reset Service stopped {"MachineName":"6640c5ddf1e1","ThreadId":6}
+[2025-12-22 19:14:35.161 +00:00 ERR] Microsoft.EntityFrameworkCore.Database.Connection An error occurred using the connection to database 'KartaDb' on server 'sqlserver,1433'. {"EventId":{"Id":20004,"Name":"Microsoft.EntityFrameworkCore.Database.Connection.ConnectionError"},"MachineName":"6640c5ddf1e1","ThreadId":8}
+[2025-12-22 19:14:35.194 +00:00 INF] Karta.WebAPI.Services.EventArchiveService EventArchiveService is stopping {"MachineName":"6640c5ddf1e1","ThreadId":8}
+[2025-12-22 19:14:35.195 +00:00 INF] Karta.WebAPI.Services.EventArchiveService EventArchiveService stopped {"MachineName":"6640c5ddf1e1","ThreadId":8}
+[2025-12-22 19:14:35.196 +00:00 ERR] Microsoft.EntityFrameworkCore.Database.Connection An error occurred using the connection to database 'KartaDb' on server 'sqlserver,1433'. {"EventId":{"Id":20004,"Name":"Microsoft.EntityFrameworkCore.Database.Connection.ConnectionError"},"MachineName":"6640c5ddf1e1","ThreadId":6}
+[2025-12-22 19:14:35.200 +00:00 INF] Karta.WebAPI.Services.OrderCleanupService OrderCleanupService is stopping {"MachineName":"6640c5ddf1e1","ThreadId":6}
+[2025-12-22 19:14:35.201 +00:00 INF] Karta.WebAPI.Services.OrderCleanupService OrderCleanupService stopped {"MachineName":"6640c5ddf1e1","ThreadId":6}
+[2025-12-22 19:14:35.205 +00:00 INF] Karta.WebAPI.Services.DatabaseInitializationService Database connection check: CanConnect=false {"MachineName":"6640c5ddf1e1","ThreadId":8}
+[2025-12-22 19:14:35.206 +00:00 INF] Karta.WebAPI.Services.DatabaseInitializationService Database does not exist. MigrateAsync() will create it... {"MachineName":"6640c5ddf1e1","ThreadId":8}
+[2025-12-22 19:14:35.216 +00:00 WRN] Karta.WebAPI.Services.DatabaseInitializationService Attempt 1 failed: A task was canceled.. Retrying in 5000ms... {"MachineName":"6640c5ddf1e1","ThreadId":8}
+System.Threading.Tasks.TaskCanceledException: A task was canceled.
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.HistoryRepository.ExistsAsync(CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+   at Karta.WebAPI.Services.DatabaseInitializationService.ApplyMigrationsWithRetryAsync(ApplicationDbContext context, CancellationToken stoppingToken) in /src/Karta.WebAPI/Services/DatabaseInitializationService.cs:line 99
+[2025-12-22 19:14:35.226 +00:00 ERR] Karta.WebAPI.Services.DatabaseInitializationService Error during database initialization: A task was canceled. {"MachineName":"6640c5ddf1e1","ThreadId":8}
+System.Threading.Tasks.TaskCanceledException: A task was canceled.
+   at Karta.WebAPI.Services.DatabaseInitializationService.ApplyMigrationsWithRetryAsync(ApplicationDbContext context, CancellationToken stoppingToken) in /src/Karta.WebAPI/Services/DatabaseInitializationService.cs:line 139
+   at Karta.WebAPI.Services.DatabaseInitializationService.ExecuteAsync(CancellationToken stoppingToken) in /src/Karta.WebAPI/Services/DatabaseInitializationService.cs:line 41
+[2025-12-22 19:14:35.227 +00:00 ERR] Karta.WebAPI.Services.DatabaseInitializationService Stack trace:    at Karta.WebAPI.Services.DatabaseInitializationService.ApplyMigrationsWithRetryAsync(ApplicationDbContext context, CancellationToken stoppingToken) in /src/Karta.WebAPI/Services/DatabaseInitializationService.cs:line 139
+   at Karta.WebAPI.Services.DatabaseInitializationService.ExecuteAsync(CancellationToken stoppingToken) in /src/Karta.WebAPI/Services/DatabaseInitializationService.cs:line 41 {"MachineName":"6640c5ddf1e1","ThreadId":8}

@@ -1,0 +1,40 @@
+﻿<Project>
+  <ItemGroup>
+    <StaticWebAssetEndpoint Include="_content/Karta.WebAPI/images/event1.jpg">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\event1.jpg'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-LjO/a2YIfHIochJlTk3ciMMseH\u002BLBrvV6rg73hG\u002B1ro="}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=3600, must-revalidate"},{"Name":"Content-Length","Value":"20064"},{"Name":"Content-Type","Value":"image/jpeg"},{"Name":"ETag","Value":"\u0022LjO/a2YIfHIochJlTk3ciMMseH\u002BLBrvV6rg73hG\u002B1ro=\u0022"},{"Name":"Last-Modified","Value":"Wed, 24 Dec 2025 15:40:25 GMT"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/Karta.WebAPI/images/event1.ugtkxgm0tw.jpg">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\event1.jpg'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"ugtkxgm0tw"},{"Name":"integrity","Value":"sha256-LjO/a2YIfHIochJlTk3ciMMseH\u002BLBrvV6rg73hG\u002B1ro="},{"Name":"label","Value":"_content/Karta.WebAPI/images/event1.jpg"}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"20064"},{"Name":"Content-Type","Value":"image/jpeg"},{"Name":"ETag","Value":"\u0022LjO/a2YIfHIochJlTk3ciMMseH\u002BLBrvV6rg73hG\u002B1ro=\u0022"},{"Name":"Last-Modified","Value":"Wed, 24 Dec 2025 15:40:25 GMT"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/Karta.WebAPI/images/event2.jpg">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\event2.jpg'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg="}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=3600, must-revalidate"},{"Name":"Content-Length","Value":"18839"},{"Name":"Content-Type","Value":"image/jpeg"},{"Name":"ETag","Value":"\u0022FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg=\u0022"},{"Name":"Last-Modified","Value":"Wed, 24 Dec 2025 15:40:25 GMT"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/Karta.WebAPI/images/event2.ua5p970zz1.jpg">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\event2.jpg'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"ua5p970zz1"},{"Name":"integrity","Value":"sha256-FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg="},{"Name":"label","Value":"_content/Karta.WebAPI/images/event2.jpg"}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"18839"},{"Name":"Content-Type","Value":"image/jpeg"},{"Name":"ETag","Value":"\u0022FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg=\u0022"},{"Name":"Last-Modified","Value":"Wed, 24 Dec 2025 15:40:25 GMT"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/Karta.WebAPI/images/README.md">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\README.md'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk="}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"698"},{"Name":"Content-Type","Value":"text/markdown"},{"Name":"ETag","Value":"\u0022sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk=\u0022"},{"Name":"Last-Modified","Value":"Wed, 24 Dec 2025 15:40:25 GMT"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/Karta.WebAPI/images/README.vs0hn0hyf8.md">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\README.md'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"vs0hn0hyf8"},{"Name":"integrity","Value":"sha256-sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk="},{"Name":"label","Value":"_content/Karta.WebAPI/images/README.md"}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"698"},{"Name":"Content-Type","Value":"text/markdown"},{"Name":"ETag","Value":"\u0022sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk=\u0022"},{"Name":"Last-Modified","Value":"Wed, 24 Dec 2025 15:40:25 GMT"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,252 @@
+{
+  "Version": 1,
+  "ManifestType": "Build",
+  "Endpoints": [
+    {
+      "Route": "images/README.md",
+      "AssetFile": "images/README.md",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "698"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/markdown"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk="
+        }
+      ]
+    },
+    {
+      "Route": "images/README.vs0hn0hyf8.md",
+      "AssetFile": "images/README.md",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "698"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/markdown"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "vs0hn0hyf8"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk="
+        },
+        {
+          "Name": "label",
+          "Value": "images/README.md"
+        }
+      ]
+    },
+    {
+      "Route": "images/event1.jpg",
+      "AssetFile": "images/event1.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "20064"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"LjO/a2YIfHIochJlTk3ciMMseH+LBrvV6rg73hG+1ro=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-LjO/a2YIfHIochJlTk3ciMMseH+LBrvV6rg73hG+1ro="
+        }
+      ]
+    },
+    {
+      "Route": "images/event1.ugtkxgm0tw.jpg",
+      "AssetFile": "images/event1.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "20064"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"LjO/a2YIfHIochJlTk3ciMMseH+LBrvV6rg73hG+1ro=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "ugtkxgm0tw"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-LjO/a2YIfHIochJlTk3ciMMseH+LBrvV6rg73hG+1ro="
+        },
+        {
+          "Name": "label",
+          "Value": "images/event1.jpg"
+        }
+      ]
+    },
+    {
+      "Route": "images/event2.jpg",
+      "AssetFile": "images/event2.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "18839"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg="
+        }
+      ]
+    },
+    {
+      "Route": "images/event2.ua5p970zz1.jpg",
+      "AssetFile": "images/event2.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "18839"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "ua5p970zz1"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg="
+        },
+        {
+          "Name": "label",
+          "Value": "images/event2.jpg"
+        }
+      ]
+    }
+  ]
+}

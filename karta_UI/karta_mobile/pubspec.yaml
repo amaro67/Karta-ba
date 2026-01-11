@@ -1,0 +1,53 @@
+name: karta_mobile
+description: "Karta Mobile Application - Event ticketing for users and scanners"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Shared package
+  karta_shared:
+    path: ../karta_shared
+
+  # UI and Icons
+  cupertino_icons: ^1.0.8
+  
+  # State Management (already in karta_shared)
+  provider: ^6.1.1
+  
+  # QR Code
+  mobile_scanner: ^5.2.3
+  qr_flutter: ^4.1.0
+  
+  # Stripe Payment Sheet
+  flutter_stripe: ^11.1.0
+  flutter_dotenv: ^5.1.0
+  http: ^1.1.0
+  
+  # Date formatting (already in karta_shared)
+  intl: ^0.19.0
+  
+  # URL launcher
+  url_launcher: ^6.2.2
+  
+  # Local storage
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+   - assets/.env
+   # - assets/images/

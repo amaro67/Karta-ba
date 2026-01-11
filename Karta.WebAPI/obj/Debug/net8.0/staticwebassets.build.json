@@ -1,0 +1,331 @@
+{
+  "Version": 1,
+  "Hash": "3HeudkC/1rqYS1R5RBxkm20BHeC7EHwGyrbV1h9FJlE=",
+  "Source": "Karta.WebAPI",
+  "BasePath": "_content/Karta.WebAPI",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "Karta.WebAPI\\wwwroot",
+      "Source": "Karta.WebAPI",
+      "ContentRoot": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\",
+      "BasePath": "_content/Karta.WebAPI",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\images\\event1.jpg",
+      "SourceId": "Karta.WebAPI",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\",
+      "BasePath": "_content/Karta.WebAPI",
+      "RelativePath": "images/event1#[.{fingerprint}]?.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "ugtkxgm0tw",
+      "Integrity": "LjO/a2YIfHIochJlTk3ciMMseH+LBrvV6rg73hG+1ro=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\event1.jpg"
+    },
+    {
+      "Identity": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\images\\event2.jpg",
+      "SourceId": "Karta.WebAPI",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\",
+      "BasePath": "_content/Karta.WebAPI",
+      "RelativePath": "images/event2#[.{fingerprint}]?.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "ua5p970zz1",
+      "Integrity": "FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\event2.jpg"
+    },
+    {
+      "Identity": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\images\\README.md",
+      "SourceId": "Karta.WebAPI",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\",
+      "BasePath": "_content/Karta.WebAPI",
+      "RelativePath": "images/README#[.{fingerprint}]?.md",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "vs0hn0hyf8",
+      "Integrity": "sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\README.md"
+    }
+  ],
+  "Endpoints": [
+    {
+      "Route": "images/event1.jpg",
+      "AssetFile": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\images\\event1.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "20064"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"LjO/a2YIfHIochJlTk3ciMMseH+LBrvV6rg73hG+1ro=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-LjO/a2YIfHIochJlTk3ciMMseH+LBrvV6rg73hG+1ro="
+        }
+      ]
+    },
+    {
+      "Route": "images/event1.ugtkxgm0tw.jpg",
+      "AssetFile": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\images\\event1.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "20064"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"LjO/a2YIfHIochJlTk3ciMMseH+LBrvV6rg73hG+1ro=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "ugtkxgm0tw"
+        },
+        {
+          "Name": "label",
+          "Value": "images/event1.jpg"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-LjO/a2YIfHIochJlTk3ciMMseH+LBrvV6rg73hG+1ro="
+        }
+      ]
+    },
+    {
+      "Route": "images/event2.jpg",
+      "AssetFile": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\images\\event2.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "18839"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg="
+        }
+      ]
+    },
+    {
+      "Route": "images/event2.ua5p970zz1.jpg",
+      "AssetFile": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\images\\event2.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "18839"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "ua5p970zz1"
+        },
+        {
+          "Name": "label",
+          "Value": "images/event2.jpg"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-FszM2r61ykZc/su/qKRVtnfrYbPitspJPA20vBQWLNg="
+        }
+      ]
+    },
+    {
+      "Route": "images/README.md",
+      "AssetFile": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\images\\README.md",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "698"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/markdown"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk="
+        }
+      ]
+    },
+    {
+      "Route": "images/README.vs0hn0hyf8.md",
+      "AssetFile": "C:\\Users\\User\\Desktop\\Karta.ba-main\\Karta.WebAPI\\wwwroot\\images\\README.md",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "698"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/markdown"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 24 Dec 2025 15:40:25 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "vs0hn0hyf8"
+        },
+        {
+          "Name": "label",
+          "Value": "images/README.md"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-sdpCq7O3Xr6HPqU/oYK6xnSHtFMcmg86B65Esb9s9Xk="
+        }
+      ]
+    }
+  ]
+}

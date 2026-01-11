@@ -1,0 +1,142 @@
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    container_name: karta-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=KartaPassword2024!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - karta-network
+
+  # Glavna Karta.ba API aplikacija
+  karta-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: karta-api
+    ports:
+      - "8080:8080"
+    environment:
+      # Environment varijable
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      
+      # Connection string za SQL Server
+      - CONNECTION_STRING=Server=sqlserver,1433;Database=KartaDb;User Id=sa;Password=KartaPassword2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;
+      
+      # JWT konfiguracija
+      - JWT_SECRET_KEY=your_super_secret_jwt_key_here_at_least_32_characters_long
+      - JWT_EXPIRY_MINUTES=60
+      - JWT_REFRESH_TOKEN_EXPIRY_DAYS=7
+      
+      # Email konfiguracija
+      - EMAIL_FROM_EMAIL=amar.omerovic0607@gmail.com
+      - EMAIL_SMTP_HOST=smtp.gmail.com
+      - EMAIL_SMTP_PORT=587
+      - EMAIL_SMTP_USERNAME=amar.omerovic0607@gmail.com
+      - EMAIL_SMTP_PASSWORD=ylej bqxm fnol bghi
+      - EMAIL_USE_RABBITMQ=${EMAIL_USE_RABBITMQ:-false}
+      
+      # RabbitMQ konfiguracija
+      - RABBITMQ_HOSTNAME=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      
+      # Stripe konfiguracija (test keys)
+      # WebhookSecret može biti prazan u development modu - PaymentMonitorService će obraditi plaćanja
+      - STRIPE_SECRET_KEY=sk_test_51S1vuqRtea3eAVbDVW0BFpjvosISi4fUmyQyxt0X4qFDhBYGl0saiE9vvE0ai3PLLNXSP9uwyyt508q1Rsue1h2V00rM0ev1Yo
+      - STRIPE_PUBLISHABLE_KEY=pk_test_51S1vuqRtea3eAVbD0w930SERvYaN3agPwsDCxH0Dl5sCe5fxUPcujcWSL4LZDyNNG3eADETOL5DhdxSEqXvuwnHJ00RuqVEpYt
+      - STRIPE_WEBHOOK_SECRET=whsec_92dc394f4902bf59628d8552c6962252d5ae9fb1dadf2612ac3f02adcdd8eb14
+      
+      # Security konfiguracija
+      - CORS_ALLOWED_ORIGINS=https://localhost:3000,http://localhost:3000,http://localhost:57841
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=1000
+      - RATE_LIMIT_BURST=100
+      
+      # Logging - eksplicitne vrednosti umesto placeholder-a
+      - LOG_LEVEL=Information
+      - LOG_FILE_PATH=logs/karta-.log
+      - LOG_RETAINED_FILE_COUNT=3
+      
+      # Order cleanup
+      - ORDER_CLEANUP_INTERVAL_MINUTES=60
+      - ORDER_EXPIRATION_HOURS=24
+      
+      # Allowed hosts
+      - ALLOWED_HOSTS=*
+    
+    volumes:
+      # Mount za wwwroot folder (slike)
+      - ./Karta.WebAPI/wwwroot:/app/wwwroot:ro
+      # Mount za log fajlove
+      - ./logs:/app/logs
+    
+    restart: unless-stopped
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Dependency na SQL Server i RabbitMQ
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    
+    networks:
+      - karta-network
+
+  # RabbitMQ servis
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: karta-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI port
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - karta-network
+
+
+
+# Volumes za persistenciju podataka
+volumes:
+  sqlserver_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+# Networks
+networks:
+  karta-network:
+    driver: bridge

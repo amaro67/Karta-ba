@@ -1,0 +1,94 @@
+# Ignorišemo nepotrebne fajlove za Docker build
+**/.dockerignore
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+**/.git
+**/.gitignore
+**/.gitattributes
+**/.project
+**/.settings
+**/.toolstarget
+**/.vs
+**/.vscode
+**/.idea
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/azds.yaml
+**/bin
+**/obj
+**/charts
+**/docker-compose*
+**/Dockerfile*
+**/node_modules
+**/npm-debug.log
+**/secrets.dev.yaml
+**/values.dev.yaml
+
+# Test projekti
+**/Karta.Tests/**
+**/Karta.IntegrationTests/**
+**/Karta.PerformanceTests/**
+**/Karta.LoadTests/**
+**/TestResults/**
+
+# Log fajlovi
+**/logs/**
+**/*.log
+
+# Baze podataka (koristićemo volume mounting)
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# Dokumentacija
+**/README.md
+**/CONFIGURATION.md
+**/ENVIRONMENT_VARIABLES.md
+**/SECURITY.md
+**/SECURITY_IMPLEMENTATION.md
+**/RABBITMQ_SETUP.md
+
+# Script fajlovi
+**/delete_users_script.*
+
+# Environment example fajlovi
+**/env.example
+
+# macOS specific
+**/.DS_Store
+**/Thumbs.db
+
+# Temporary fajlovi
+**/tmp/**
+**/temp/**
+
+# Flutter/Mobile UI - NE TREBA ZA BACKEND
+karta_UI/
+**/karta_UI/**
+
+# Flutter build artifacts
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/pubspec.lock
+**/ios/
+**/android/
+**/macos/
+**/linux/
+**/windows/
+**/web/
+
+# Assets (ako su veliki)
+assets/
+
+# Scripts (ne trebaju u Docker image)
+scripts/
+
+# Documentation files
+*.md
+docs/

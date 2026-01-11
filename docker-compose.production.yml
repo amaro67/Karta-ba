@@ -1,0 +1,160 @@
+version: '3.8'
+
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    container_name: karta-sqlserver-prod
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SQLSERVER_SA_PASSWORD}
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - karta-network-prod
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # Production verzija Karta.ba API aplikacije
+  karta-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: karta-api-prod
+    ports:
+      - "80:8080"
+      - "443:8080"  # HTTPS port
+    environment:
+      # Production environment
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      
+      # Connection string za SQL Server
+      - CONNECTION_STRING=Server=sqlserver,1433;Database=KartaDb;User Id=sa;Password=${SQLSERVER_SA_PASSWORD};TrustServerCertificate=true;MultipleActiveResultSets=true;
+      
+      # JWT konfiguracija - PROMENITE OVE VREDNOSTI!
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_EXPIRY_MINUTES=60
+      - JWT_REFRESH_TOKEN_EXPIRY_DAYS=7
+      
+      # Email konfiguracija - PROMENITE OVE VREDNOSTI!
+      - EMAIL_FROM_EMAIL=${EMAIL_FROM_EMAIL}
+      - EMAIL_SMTP_HOST=${EMAIL_SMTP_HOST}
+      - EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT}
+      - EMAIL_SMTP_USERNAME=${EMAIL_SMTP_USERNAME}
+      - EMAIL_SMTP_PASSWORD=${EMAIL_SMTP_PASSWORD}
+      - EMAIL_USE_RABBITMQ=${EMAIL_USE_RABBITMQ:-false}
+      
+      # RabbitMQ konfiguracija
+      - RABBITMQ_HOSTNAME=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      
+      # Stripe konfiguracija - PROMENITE OVE VREDNOSTI!
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      
+      # Security konfiguracija
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=1000
+      - RATE_LIMIT_BURST=100
+      
+      # Logging
+      - LOG_LEVEL=Warning
+      - LOG_FILE_PATH=logs/karta-.log
+      - LOG_RETAINED_FILE_COUNT=7
+      
+      # Order cleanup
+      - ORDER_CLEANUP_INTERVAL_MINUTES=60
+      - ORDER_EXPIRATION_HOURS=24
+      
+      # Allowed hosts
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    
+    volumes:
+      # Mount za log fajlove
+      - ./logs:/app/logs
+    
+    restart: always
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Dependency na SQL Server i RabbitMQ
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    
+    networks:
+      - karta-network-prod
+    
+    # Resource limits za production
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # RabbitMQ servis
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: karta-rabbitmq-prod
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI port
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - karta-network-prod
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+# Volumes za persistenciju podataka
+volumes:
+  sqlserver_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+# Networks
+networks:
+  karta-network-prod:
+    driver: bridge
