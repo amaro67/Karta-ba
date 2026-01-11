@@ -1,177 +1,166 @@
-# Karta.ba
+Karta.ba
 
-Event ticketing platform with desktop management and mobile app for attendees and scanners.
+Platforma za prodaju ulaznica za događaje sa desktop aplikacijom za organizatore i mobilnom aplikacijom za korisnike.
 
-## What's in the box
+Šta je uključeno
 
-This is a full-stack event ticketing system with three main parts:
-- **Backend API** - .NET 8 API with SQL Server, Stripe payments, and email notifications
-- **Desktop App** - Flutter app for organizers to manage events and tickets
-- **Mobile App** - Flutter app for users to buy tickets and scanners to validate them
+Ovo je full-stack sistem za prodaju karata koji se sastoji od tri glavna dijela:
 
-## Getting Started
+Backend API – .NET 8 API sa SQL Server bazom, Stripe plaćanjima i email notifikacijama
 
-### Prerequisites
+Desktop aplikacija – Flutter aplikacija za organizatore (upravljanje događajima i kartama)
 
-You'll need these installed:
-- Docker and Docker Compose (for running the backend)
-- .NET 8 SDK (if you want to run the API locally without Docker)
-- Flutter SDK (for the mobile/desktop apps)
-- An IDE (VS Code, Rider, or Visual Studio)
+Mobilna aplikacija – Flutter aplikacija za korisnike (kupovina karata)
 
-### Quick Start - Backend
+Pokretanje projekta
+Preduslovi
 
-# Start all services (database, API, RabbitMQ)
+Potrebno je da imate instalirano:
+
+Docker i Docker Compose
+
+.NET 8 SDK
+
+Flutter SDK
+
+IDE (VS Code, Rider ili Visual Studio)
+
+Brzi start – Backend
+# Pokretanje svih servisa (baza, API, RabbitMQ)
 docker-compose up --build
 
-The API should now be running at `http://localhost:8080/swagger/index.html`
 
-### Running the Desktop App
+API će biti dostupan na:
+http://localhost:8080/swagger/index.html
 
-```bash
-cd karta_UI/karta_desktop
+Tipovi korisničkih naloga
 
-# Get dependencies
-flutter pub get
+Postoje tri tipa naloga, svaki sa različitim pravima pristupa:
 
-# Run it
-flutter run
-```
+1. Admin (Super korisnik)
 
-When it asks which device to use, pick your OS (macOS, Windows, or Linux).
+Ima potpuni pristup sistemu
 
-### Running the Mobile App
+Samo admin može kreirati druge admin naloge
 
-```bash
-cd karta_UI/karta_mobile
+Koristi se za administraciju platforme
 
-# Get dependencies
-flutter pub get
+Test Admin nalog:
 
-# Run on an emulator or connected device
-flutter run
-```
+Email: amar.omerovic0607@gmail.com
 
-You'll need either an Android emulator, iOS simulator, or a physical device connected.
+Lozinka: Password123!
 
-## Understanding Account Types
+2. Organizator
 
-There are four different account types, each with different access:
+Kreira se registracijom putem desktop aplikacije
 
-### 1. Admin (Super User)
-- Can do literally everything
-- Only admins can create other admin accounts
-- Used for platform management
+Može kreirati i upravljati vlastitim događajima
 
-**Test Admin Login:**
-- Email: `amar.omerovic0607@gmail.com`
-- Password: `Password123!`
+Ima uvid u prodaju i osnovnu analitiku
 
-### 2. Organizer
-- Created when someone registers through the **desktop app**
-- Can create and manage their own events
-- Can create scanner accounts for their events
-- Can view sales and analytics
+Test Organizator nalog:
 
-### 3. User (Regular Customer)
-- Created when someone registers on the **mobile app**
-- Can browse events and buy tickets
-- Can view their purchased tickets
-- Can use QR codes for event entry
+Email: adil+1@edu.fit.ba
 
-### 4. Scanner
-- Created by organizers (not through registration)
-- Can only scan tickets at events they're assigned to
-- Uses mobile app in scanner mode
-- Cannot buy tickets or create events
+Lozinka: Password123!
 
-## Account Creation Flow
+3. User (Obični korisnik)
 
-Here's how to create each type of account:
+Kreira se registracijom putem mobilne aplikacije
 
-**Admin accounts:**
-- Only existing admins can create new admins
-- There's no self-registration for admin
+Može pregledati događaje i kupovati karte
 
-**Organizer accounts:**
-- Open the desktop app
-- Click "Register"
-- Fill out your info
-- You'll automatically get organizer permissions
+Može pregledati kupljene karte
 
-**User accounts:**
-- Open the mobile app
-- Tap "Register" 
-- Fill out your info
-- You can now browse and buy tickets
+Ulazak na događaje putem QR koda
 
-**Scanner accounts:**
-- Organizers create these from the desktop app
-- Go to an event and assign scanners
-- Scanners get login credentials to use on mobile
+Test User nalog:
 
-## Database Migrations
+Email: adil@edu.fit.ba
 
-If you need to reset the database or run migrations manually:
+Tok kreiranja naloga
 
-```bash
-# Stop containers
+Admin nalozi:
+
+Samo postojeći admin može kreirati novog admina
+
+Ne postoji opcija samostalne registracije
+
+Organizator nalozi:
+
+Registracija putem desktop aplikacije
+
+Nakon registracije automatski se dodjeljuju prava organizatora
+
+User nalozi:
+
+Registracija putem mobilne aplikacije
+
+Nakon prijave moguće je pregledati i kupovati karte
+
+Migracije baze podataka
+
+Ako želite resetovati bazu ili ručno pokrenuti migracije:
+
+# Zaustavi kontejnere
 docker-compose down
 
-# Remove the database volume (WARNING: deletes all data)
+# Obriši volume baze (UPOZORENJE: briše sve podatke)
 docker volume rm karta_sqlserver_data
 
-# Start fresh
+# Ponovo pokreni sve
 docker-compose up --build
-```
-
-The migrations run automatically when the API starts up.
-
-## Project Structure
-
-```
-.
-├── Karta.WebAPI/          # Backend API
-├── Karta.Service/         # Business logic layer
-├── Karta.Model/           # Database models
-├── karta_UI/
-│   ├── karta_desktop/     # Desktop app (organizers)
-│   ├── karta_mobile/      # Mobile app (users/scanners)
-│   └── karta_shared/      # Shared code between apps
-├── scripts/               # Database and setup scripts
-└── docker-compose.yml     # Docker configuration
-```
 
 
-### Important API URLs
+Migracije se automatski izvršavaju prilikom pokretanja API-ja.
 
-- API: `http://localhost:8080`
-- RabbitMQ Management: `http://localhost:15672` (guest/guest)
-- Swagger Docs: `http://localhost:8080/swagger`
+Važni API URL-ovi
 
-## Common Issues
+API: http://localhost:8080
 
-**Docker containers won't start:**
-- Make sure nothing else is using ports 1433, 5672, 8080, or 15672
-- Try `docker-compose down` then `docker-compose up --build`
+RabbitMQ Management: http://localhost:15672 (guest / guest)
 
-**Can't login:**
-- Use the admin credentials above for first login
-- Make sure the database initialized properly (check logs)
-- Try creating a new user through registration
+Swagger dokumentacija: http://localhost:8080/swagger
+
+Česti problemi
+
+Docker se ne pokreće:
+
+Provjeriti da portovi 1433, 5672, 8080 ili 15672 nisu zauzeti
+
+Probati:
+
+docker-compose down
+docker-compose up --build
 
 
-**Connect to the database:**
-- Host: `localhost`
-- Port: `1433`
-- User: `sa`
-- Password: Check your `.env` file (`KartaPassword2024!`)
-- Database: `KartaDb`
+Neuspješna prijava:
 
-## Testing Payments
+Koristiti admin podatke navedene iznad
 
-Use Stripe's test card numbers:
-- Success: `4242 4242 4242 4242`
-- Decline: `4000 0000 0000 0002`
-- Any future expiry date and CVC
+Provjeriti da li se baza pravilno inicijalizovala (Docker logovi)
 
+Probati registrovati novog korisnika
+
+Povezivanje na bazu:
+
+Host: localhost
+
+Port: 1433
+
+User: sa
+
+Password: provjeriti .env fajl (KartaPassword2024!)
+
+Database: KartaDb
+
+Testiranje plaćanja
+
+Koristiti Stripe test kartice:
+
+Uspješno plaćanje: 4242 4242 4242 4242
+
+Odbijena kartica: 4000 0000 0000 0002
+
+Bilo koji budući datum isteka i CVC
