@@ -158,7 +158,7 @@ The migrations run automatically when the API starts up.
 **Can't login:**
 - Use the admin credentials above for first login
 - Make sure the database initialized properly (check logs)
-- Try creating a new user through registrationß
+- Try creating a new user through registration
 
 
 **Connect to the database:**
@@ -174,5 +174,4 @@ Use Stripe's test card numbers:
 - Success: `4242 4242 4242 4242`
 - Decline: `4000 0000 0000 0002`
 - Any future expiry date and CVC
-
 
