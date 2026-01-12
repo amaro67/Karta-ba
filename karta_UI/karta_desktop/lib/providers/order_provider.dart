@@ -222,4 +222,50 @@ class OrderProvider extends ChangeNotifier {
     _currentPage = 1;
     notifyListeners();
   }
+
+  // Get orders for a specific event
+  Future<List<OrderDto>> getOrdersForEvent(String eventId) async {
+    final token = _authProvider.accessToken;
+    if (token == null) {
+      return [];
+    }
+    try {
+      // Load all orders (we'll filter by eventId on the client side)
+      // Since we need all orders for the event, we'll load multiple pages
+      final allOrders = <OrderDto>[];
+      int page = 1;
+      bool hasMore = true;
+      
+      while (hasMore) {
+        final response = await ApiClient.getAllOrdersAdmin(
+          token,
+          status: null, // Get all statuses
+          page: page,
+          size: 100, // Load more per page
+        );
+        final pagedResult = PagedResult<OrderDto>.fromJson(
+          response,
+          (json) => OrderDto.fromJson(json as Map<String, dynamic>),
+        );
+        
+        // Filter orders that contain items for this event
+        final eventOrders = pagedResult.items.where((order) {
+          return order.items.any((item) => item.eventId == eventId);
+        }).toList();
+        
+        allOrders.addAll(eventOrders);
+        
+        hasMore = pagedResult.hasNextPage;
+        page++;
+        
+        // Safety limit to prevent infinite loops
+        if (page > 50) break;
+      }
+      
+      return allOrders;
+    } catch (e) {
+      print('Error loading orders for event: $e');
+      return [];
+    }
+  }
 }

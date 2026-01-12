@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../providers/event_provider.dart';
+import '../../providers/order_provider.dart';
 import '../../model/event/event_dto.dart';
+import '../../model/order/order_dto.dart';
 import 'event_form_screen.dart';
 import '../../utils/error_dialog.dart';
 import '../../utils/api_client.dart';
@@ -13,6 +16,9 @@ class EventDetailScreen extends StatefulWidget {
   State<EventDetailScreen> createState() => _EventDetailScreenState();
 }
 class _EventDetailScreenState extends State<EventDetailScreen> {
+  bool _isLoadingSales = false;
+  Map<DateTime, int> _salesByDate = {};
+
   @override
   void initState() {
     super.initState();
@@ -20,7 +26,48 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       final eventProvider = context.read<EventProvider>();
       eventProvider.clearCurrentEvent();
       eventProvider.loadEvent(widget.eventId);
+      _loadSalesData();
     });
+  }
+
+  Future<void> _loadSalesData() async {
+    setState(() {
+      _isLoadingSales = true;
+    });
+    try {
+      final orderProvider = context.read<OrderProvider>();
+      final orders = await orderProvider.getOrdersForEvent(widget.eventId);
+      
+      // Filter only completed/paid orders
+      final validOrders = orders.where((order) {
+        return order.status.toLowerCase() == 'completed' || 
+               order.status.toLowerCase() == 'paid';
+      }).toList();
+      
+      // Group by date
+      final salesByDate = <DateTime, int>{};
+      for (final order in validOrders) {
+        final date = DateTime(
+          order.createdAt.year,
+          order.createdAt.month,
+          order.createdAt.day,
+        );
+        final eventItems = order.items.where((item) => item.eventId == widget.eventId);
+        final totalTickets = eventItems.fold(0, (sum, item) => sum + item.qty);
+        
+        salesByDate[date] = (salesByDate[date] ?? 0) + totalTickets;
+      }
+      
+      setState(() {
+        _salesByDate = salesByDate;
+        _isLoadingSales = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingSales = false;
+      });
+      print('Error loading sales data: $e');
+    }
   }
   @override
   void dispose() {
@@ -85,6 +132,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       ),
       body: Consumer<EventProvider>(
         builder: (context, eventProvider, child) {
+          // Refresh sales data when event is loaded or reloaded
+          final currentEvent = eventProvider.currentEvent;
+          if (currentEvent != null && currentEvent.id == widget.eventId) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && !_isLoadingSales) {
+                // Refresh sales data to get latest orders
+                _loadSalesData();
+              }
+            });
+          }
+          
           if (eventProvider.isLoadingEvent) {
             return Center(
               child: Column(
@@ -423,6 +481,58 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             ],
                           ),
                         ),
+                        const SizedBox(height: 20),
+                        _SectionCard(
+                          title: 'Sales Over Time',
+                          titleAction: IconButton(
+                            icon: _isLoadingSales
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.refresh),
+                            onPressed: _isLoadingSales ? null : _loadSalesData,
+                            tooltip: 'Refresh sales data',
+                            iconSize: 20,
+                          ),
+                          child: _isLoadingSales
+                              ? const Padding(
+                                  padding: EdgeInsets.all(40),
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : _salesByDate.isEmpty
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(40),
+                                      child: Center(
+                                        child: Column(
+                                          children: [
+                                            Icon(
+                                              Icons.show_chart,
+                                              size: 48,
+                                              color: Colors.grey[400],
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Text(
+                                              'No sales data available',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    color: Colors.grey[600],
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox(
+                                      height: 300,
+                                      child: _SalesChart(salesByDate: _salesByDate),
+                                    ),
+                        ),
                       ],
                     ],
                   ),
@@ -576,9 +686,11 @@ class _InfoCard extends StatelessWidget {
 class _SectionCard extends StatelessWidget {
   final String title;
   final Widget child;
+  final Widget? titleAction;
   const _SectionCard({
     required this.title,
     required this.child,
+    this.titleAction,
   });
   @override
   Widget build(BuildContext context) {
@@ -595,12 +707,18 @@ class _SectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF212121),
-                ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF212121),
+                    ),
+              ),
+              if (titleAction != null) titleAction!,
+            ],
           ),
           const SizedBox(height: 16),
           child,
@@ -666,6 +784,118 @@ class _StatItem extends StatelessWidget {
                       ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+class _SalesChart extends StatelessWidget {
+  final Map<DateTime, int> salesByDate;
+  const _SalesChart({required this.salesByDate});
+  @override
+  Widget build(BuildContext context) {
+    if (salesByDate.isEmpty) {
+      return const Center(child: Text('No sales data'));
+    }
+    // Sort dates
+    final sortedDates = salesByDate.keys.toList()..sort();
+    // Prepare data for chart
+    final spots = <FlSpot>[];
+    for (int i = 0; i < sortedDates.length; i++) {
+      spots.add(FlSpot(i.toDouble(), salesByDate[sortedDates[i]]!.toDouble()));
+    }
+    // Find max value for scaling
+    final maxValue = salesByDate.values.reduce((a, b) => a > b ? a : b);
+    final maxY = (maxValue * 1.2).ceil().toDouble(); // Add 20% padding
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: maxY / 5,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey.withOpacity(0.2),
+              strokeWidth: 1,
+            );
+          },
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              interval: sortedDates.length > 7 ? (sortedDates.length / 7).ceil().toDouble() : 1,
+              getTitlesWidget: (value, meta) {
+                if (value.toInt() >= sortedDates.length) return const Text('');
+                final date = sortedDates[value.toInt()];
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    DateFormat('MMM dd').format(date),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 10,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              interval: maxY / 5,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toInt().toString(),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 10,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        ),
+        minX: 0,
+        maxX: (sortedDates.length - 1).toDouble(),
+        minY: 0,
+        maxY: maxY,
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: Theme.of(context).colorScheme.primary,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: 4,
+                  color: Colors.white,
+                  strokeWidth: 2,
+                );
+              },
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             ),
           ),
         ],
