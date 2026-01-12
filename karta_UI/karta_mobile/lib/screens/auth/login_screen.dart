@@ -115,6 +115,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Lozinka je obavezna';
                     }
+                    if (value.length < 12) {
+                      return 'Lozinka mora imati najmanje 12 karaktera';
+                    }
                     return null;
                   },
                 ),
