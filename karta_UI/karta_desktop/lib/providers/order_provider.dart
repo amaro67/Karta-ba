@@ -5,6 +5,9 @@ import '../model/event/event_dto.dart';
 import '../model/user/user_detail_response.dart';
 import '../utils/api_client.dart';
 import '../providers/auth_provider.dart';
+import '../providers/organizer_sales_provider.dart';
+import '../model/order/order_item_dto.dart';
+import '../model/order/ticket_dto.dart';
 class OrderProvider extends ChangeNotifier {
   final AuthProvider _authProvider;
   OrderProvider(this._authProvider);
@@ -230,39 +233,77 @@ class OrderProvider extends ChangeNotifier {
       return [];
     }
     try {
-      // Load all orders (we'll filter by eventId on the client side)
-      // Since we need all orders for the event, we'll load multiple pages
-      final allOrders = <OrderDto>[];
-      int page = 1;
-      bool hasMore = true;
-      
-      while (hasMore) {
-        final response = await ApiClient.getAllOrdersAdmin(
-          token,
-          status: null, // Get all statuses
-          page: page,
-          size: 100, // Load more per page
-        );
-        final pagedResult = PagedResult<OrderDto>.fromJson(
-          response,
-          (json) => OrderDto.fromJson(json as Map<String, dynamic>),
-        );
+      // Provjeri da li je korisnik Admin ili Organizer
+      if (_authProvider.isAdmin) {
+        // Admin koristi postojeći endpoint
+        final allOrders = <OrderDto>[];
+        int page = 1;
+        bool hasMore = true;
         
-        // Filter orders that contain items for this event
-        final eventOrders = pagedResult.items.where((order) {
-          return order.items.any((item) => item.eventId == eventId);
+        while (hasMore) {
+          final response = await ApiClient.getAllOrdersAdmin(
+            token,
+            status: null, // Get all statuses
+            page: page,
+            size: 100, // Load more per page
+          );
+          final pagedResult = PagedResult<OrderDto>.fromJson(
+            response,
+            (json) => OrderDto.fromJson(json as Map<String, dynamic>),
+          );
+          
+          // Filter orders that contain items for this event
+          final eventOrders = pagedResult.items.where((order) {
+            return order.items.any((item) => item.eventId == eventId);
+          }).toList();
+          
+          allOrders.addAll(eventOrders);
+          
+          hasMore = pagedResult.hasNextPage;
+          page++;
+          
+          // Safety limit to prevent infinite loops
+          if (page > 50) break;
+        }
+        
+        return allOrders;
+      } else if (_authProvider.isOrganizer) {
+        // Organizer koristi organizer-sales endpoint
+        final response = await ApiClient.getOrganizerSales(token);
+        final sales = response
+            .map((sale) => OrganizerSale.fromJson(Map<String, dynamic>.from(sale as Map)))
+            .toList();
+        
+        // Filtriraj po eventId i konvertuj u OrderDto format
+        final eventSales = sales.where((sale) => sale.eventId == eventId).toList();
+        
+        // Konvertuj OrganizerSale u OrderDto
+        return eventSales.map((sale) {
+          // Kreiraj OrderItemDto za event
+          final orderItem = OrderItemDto(
+            id: sale.orderId, // Koristimo orderId kao itemId
+            eventId: sale.eventId,
+            priceTierId: '', // OrganizerSale nema priceTierId
+            qty: sale.ticketsCount,
+            unitPrice: sale.totalAmount / sale.ticketsCount, // Procijenjena cijena po karti
+            tickets: [], // OrganizerSale nema detalje o ticketima
+          );
+          
+          return OrderDto(
+            id: sale.orderId,
+            userId: '', // OrganizerSale nema userId
+            totalAmount: sale.totalAmount,
+            currency: sale.currency,
+            status: sale.status,
+            createdAt: sale.createdAt,
+            items: [orderItem],
+            userEmail: sale.buyerEmail,
+          );
         }).toList();
-        
-        allOrders.addAll(eventOrders);
-        
-        hasMore = pagedResult.hasNextPage;
-        page++;
-        
-        // Safety limit to prevent infinite loops
-        if (page > 50) break;
+      } else {
+        // Korisnik nije ni Admin ni Organizer
+        return [];
       }
-      
-      return allOrders;
     } catch (e) {
       print('Error loading orders for event: $e');
       return [];

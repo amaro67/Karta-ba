@@ -71,10 +71,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
   @override
   void dispose() {
-    if (mounted) {
-      final eventProvider = context.read<EventProvider>();
-      eventProvider.clearCurrentEvent();
-    }
+    // Ne koristimo context.read u dispose jer context možda nije više validan
+    // clearCurrentEvent će biti pozvan u initState sljedećeg ekrana
     super.dispose();
   }
   @override
@@ -132,17 +130,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       ),
       body: Consumer<EventProvider>(
         builder: (context, eventProvider, child) {
-          // Refresh sales data when event is loaded or reloaded
-          final currentEvent = eventProvider.currentEvent;
-          if (currentEvent != null && currentEvent.id == widget.eventId) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted && !_isLoadingSales) {
-                // Refresh sales data to get latest orders
-                _loadSalesData();
-              }
-            });
-          }
-          
           if (eventProvider.isLoadingEvent) {
             return Center(
               child: Column(

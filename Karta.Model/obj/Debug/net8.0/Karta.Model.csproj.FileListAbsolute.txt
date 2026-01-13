@@ -12,3 +12,4 @@ C:\Users\User\Desktop\Karta.ba-main\Karta.Model\obj\Debug\net8.0\refint\Karta.Mo
 C:\Users\User\Desktop\Karta.ba-main\Karta.Model\obj\Debug\net8.0\Karta.Model.pdb
 C:\Users\User\Desktop\Karta.ba-main\Karta.Model\obj\Debug\net8.0\Karta.Model.genruntimeconfig.cache
 C:\Users\User\Desktop\Karta.ba-main\Karta.Model\obj\Debug\net8.0\ref\Karta.Model.dll
+C:\Users\User\Desktop\Karta.ba-main\Karta.Model\obj\Debug\net8.0\Karta.Model.sourcelink.json

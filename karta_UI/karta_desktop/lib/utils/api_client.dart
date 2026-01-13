@@ -919,6 +919,66 @@ class ApiClient {
   static Future<Map<String, dynamic>> getTicket(String token, String ticketId) async {
     return await get('/Ticket/$ticketId', token: token);
   }
+  static Future<String> uploadEventImage(String token, File imageFile) async {
+    try {
+      final uri = Uri.parse('$baseUrl$apiPrefix/Event/upload-image');
+      final request = http.MultipartRequest('POST', uri);
+      
+      // Dodaj Authorization header
+      request.headers['Authorization'] = 'Bearer $token';
+      
+      // Dodaj fajl
+      final fileStream = http.ByteStream(imageFile.openRead());
+      final fileLength = await imageFile.length();
+      final fileExtension = imageFile.path.split('.').last.toLowerCase();
+      String contentType = 'image/jpeg';
+      if (fileExtension == 'png') {
+        contentType = 'image/png';
+      } else if (fileExtension == 'gif') {
+        contentType = 'image/gif';
+      } else if (fileExtension == 'webp') {
+        contentType = 'image/webp';
+      }
+      
+      final multipartFile = http.MultipartFile(
+        'file',
+        fileStream,
+        fileLength,
+        filename: imageFile.path.split('/').last,
+      );
+      request.files.add(multipartFile);
+      
+      print('🔵 ApiClient.uploadEventImage: Uploading ${imageFile.path}');
+      
+      final streamedResponse = await _client.send(request);
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      print('🔵 ApiClient.uploadEventImage: Response status: ${response.statusCode}');
+      print('🔵 ApiClient.uploadEventImage: Response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData['imageUrl'] as String;
+      } else {
+        String errorMessage = 'Upload failed (Status: ${response.statusCode})';
+        try {
+          if (response.body.isNotEmpty) {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] as String? ?? errorMessage;
+          }
+        } catch (e) {
+          print('🔴 ApiClient.uploadEventImage: Error parsing error response: $e');
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      print('🔴 ApiClient.uploadEventImage: Exception: $e');
+      if (e is SocketException) {
+        throw Exception('Unable to connect to server. Please check your connection.');
+      }
+      rethrow;
+    }
+  }
   static void dispose() {
     _client.close();
   }

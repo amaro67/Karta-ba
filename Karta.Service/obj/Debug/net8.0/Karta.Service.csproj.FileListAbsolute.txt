@@ -13,3 +13,4 @@ C:\Users\User\Desktop\Karta.ba-main\Karta.Service\obj\Debug\net8.0\Karta.Service
 C:\Users\User\Desktop\Karta.ba-main\Karta.Service\obj\Debug\net8.0\refint\Karta.Service.dll
 C:\Users\User\Desktop\Karta.ba-main\Karta.Service\obj\Debug\net8.0\Karta.Service.pdb
 C:\Users\User\Desktop\Karta.ba-main\Karta.Service\obj\Debug\net8.0\ref\Karta.Service.dll
+C:\Users\User\Desktop\Karta.ba-main\Karta.Service\obj\Debug\net8.0\Karta.Service.sourcelink.json

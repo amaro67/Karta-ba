@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 import '../../providers/event_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../model/event/event_dto.dart';
@@ -25,17 +27,49 @@ class _EventFormScreenState extends State<EventFormScreen> {
   final _coverImageUrlController = TextEditingController();
   final List<_TicketOptionController> _ticketOptions = [];
   final List<String> _supportedCurrencies = const ['BAM', 'EUR', 'USD'];
+  final List<String> _categories = const [
+    'Muzika',
+    'Sport',
+    'Kultura',
+    'Zabava',
+    'Biznis',
+    'Obrazovanje',
+    'Edukacija',
+    'Tehnologija',
+    'Umjetnost',
+    'Film',
+    'Festival',
+    'Pozoriste',
+  ];
+  final List<String> _cities = const [
+    'Sarajevo',
+    'Banja Luka',
+    'Tuzla',
+    'Zenica',
+    'Mostar',
+    'Bijeljina',
+    'Brčko',
+    'Prijedor',
+    'Trebinje',
+    'Doboj',
+    'Bihać',
+    'Livno',
+    'Goražde',
+    'Visoko',
+  ];
+  String? _selectedCategory;
+  String? _selectedCity;
   DateTime? _startsAt;
   DateTime? _endsAt;
   String _status = 'Draft';
   bool _isLoading = false;
+  bool _isUploadingImage = false;
   @override
   void initState() {
     super.initState();
+    _countryController.text = 'Bosnia and Herzegovina';
     if (widget.event != null) {
       _populateForm(widget.event!);
-    } else {
-      _countryController.text = 'Bosnia and Herzegovina';
     }
     _initializeTicketOptions();
     _coverImageUrlController.addListener(() {
@@ -49,8 +83,13 @@ class _EventFormScreenState extends State<EventFormScreen> {
     _descriptionController.text = event.description ?? '';
     _venueController.text = event.venue;
     _cityController.text = event.city;
-    _countryController.text = event.country;
+    _selectedCity = event.city;
+    _countryController.text = 'Bosnia and Herzegovina';
     _categoryController.text = event.category;
+    // Provjeri da li je kategorija u listi, ako nije postavi na prvu kategoriju
+    _selectedCategory = _categories.contains(event.category) 
+        ? event.category 
+        : _categories.isNotEmpty ? _categories.first : null;
     _tagsController.text = event.tags ?? '';
     _coverImageUrlController.text = event.coverImageUrl ?? '';
     _startsAt = event.startsAt;
@@ -162,7 +201,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
       'country': _countryController.text.trim(),
       'startsAt': _startsAt!.toIso8601String(),
       'endsAt': _endsAt?.toIso8601String(),
-      'category': _categoryController.text.trim(),
+      'category': _selectedCategory ?? _categoryController.text.trim(),
       'tags': _tagsController.text.trim().isEmpty
           ? null
           : _tagsController.text.trim(),
@@ -228,6 +267,92 @@ class _EventFormScreenState extends State<EventFormScreen> {
       });
     }
     return tiers;
+  }
+  Future<void> _pickAndUploadImage() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+      
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+      
+      final filePath = result.files.single.path;
+      if (filePath == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Greška pri odabiru slike')),
+          );
+        }
+        return;
+      }
+      
+      final imageFile = File(filePath);
+      
+      // Provjeri veličinu (max 5MB)
+      final fileSize = await imageFile.length();
+      if (fileSize > 5 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Slika je prevelika. Maksimalna veličina je 5MB'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+      
+      setState(() {
+        _isUploadingImage = true;
+      });
+      
+      final authProvider = context.read<AuthProvider>();
+      final token = authProvider.accessToken;
+      
+      if (token == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Niste prijavljeni'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() {
+          _isUploadingImage = false;
+        });
+        return;
+      }
+      
+      final imageUrl = await ApiClient.uploadEventImage(token, imageFile);
+      
+      if (mounted) {
+        setState(() {
+          _coverImageUrlController.text = imageUrl;
+          _isUploadingImage = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Slika uspješno uploadovana'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isUploadingImage = false;
+        });
+        ErrorDialog.show(
+          context,
+          title: 'Greška pri uploadovanju',
+          message: e.toString(),
+        );
+      }
+    }
   }
   @override
   Widget build(BuildContext context) {
@@ -311,17 +436,50 @@ class _EventFormScreenState extends State<EventFormScreen> {
                           Row(
                             children: [
                               Expanded(
-                                child: BaseTextField(
-                                  key: const ValueKey('category_field'),
-                                  label: 'Category *',
-                                  hint: 'e.g., Music, Sports, Theater',
-                                  controller: _categoryController,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Category is required';
-                                    }
-                                    return null;
-                                  },
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Category *',
+                                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF212121),
+                                            fontSize: 13,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    DropdownButtonFormField<String>(
+                                      value: _selectedCategory,
+                                      decoration: InputDecoration(
+                                        hintText: 'Odaberi kategoriju',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 14,
+                                        ),
+                                      ),
+                                      items: _categories.map((category) {
+                                        return DropdownMenuItem<String>(
+                                          value: category,
+                                          child: Text(category),
+                                        );
+                                      }).toList(),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Category is required';
+                                        }
+                                        return null;
+                                      },
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedCategory = value;
+                                          _categoryController.text = value ?? '';
+                                        });
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -360,17 +518,86 @@ class _EventFormScreenState extends State<EventFormScreen> {
                           Row(
                             children: [
                               Expanded(
-                                child: BaseTextField(
-                                  key: const ValueKey('city_field'),
-                                  label: 'City *',
-                                  hint: 'Enter city',
-                                  controller: _cityController,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'City is required';
-                                    }
-                                    return null;
-                                  },
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'City *',
+                                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF212121),
+                                            fontSize: 13,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Autocomplete<String>(
+                                      initialValue: TextEditingValue(text: _cityController.text),
+                                      optionsBuilder: (TextEditingValue textEditingValue) {
+                                        if (textEditingValue.text.isEmpty) {
+                                          return _cities;
+                                        }
+                                        return _cities.where((city) {
+                                          return city.toLowerCase().contains(
+                                                textEditingValue.text.toLowerCase(),
+                                              );
+                                        });
+                                      },
+                                      onSelected: (String value) {
+                                        setState(() {
+                                          _selectedCity = value;
+                                          _cityController.text = value;
+                                        });
+                                      },
+                                      fieldViewBuilder: (
+                                        BuildContext context,
+                                        TextEditingController textEditingController,
+                                        FocusNode focusNode,
+                                        VoidCallback onFieldSubmitted,
+                                      ) {
+                                        // Initialize with current value
+                                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                                          if (textEditingController.text != _cityController.text) {
+                                            textEditingController.text = _cityController.text;
+                                          }
+                                        });
+                                        
+                                        // Sync changes back to _cityController
+                                        textEditingController.addListener(() {
+                                          if (textEditingController.text != _cityController.text) {
+                                            _cityController.text = textEditingController.text;
+                                            setState(() {
+                                              _selectedCity = textEditingController.text;
+                                            });
+                                          }
+                                        });
+                                        
+                                        return TextFormField(
+                                          key: const ValueKey('city_field'),
+                                          controller: textEditingController,
+                                          focusNode: focusNode,
+                                          decoration: InputDecoration(
+                                            hintText: 'Kucajte ili odaberite grad',
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            contentPadding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 14,
+                                            ),
+                                          ),
+                                          validator: (value) {
+                                            if (value == null || value.trim().isEmpty) {
+                                              return 'City is required';
+                                            }
+                                            return null;
+                                          },
+                                          onFieldSubmitted: (String value) {
+                                            onFieldSubmitted();
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -378,8 +605,9 @@ class _EventFormScreenState extends State<EventFormScreen> {
                                 child: BaseTextField(
                                   key: const ValueKey('country_field'),
                                   label: 'Country *',
-                                  hint: 'Enter country',
+                                  hint: 'Bosnia and Herzegovina',
                                   controller: _countryController,
+                                  enabled: false,
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
                                       return 'Country is required';
@@ -474,11 +702,33 @@ class _EventFormScreenState extends State<EventFormScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          BaseTextField(
-                            key: const ValueKey('cover_image_field'),
-                            label: 'Cover Image URL',
-                            hint: 'Enter image URL',
-                            controller: _coverImageUrlController,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: BaseTextField(
+                                  key: const ValueKey('cover_image_field'),
+                                  label: 'Cover Image URL',
+                                  hint: 'Upload sliku da se putanja automatski popuni',
+                                  controller: _coverImageUrlController,
+                                  enabled: false, // Disabled - samo upload button
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              ElevatedButton.icon(
+                                onPressed: _isUploadingImage ? null : _pickAndUploadImage,
+                                icon: _isUploadingImage
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.upload_file),
+                                label: Text(_isUploadingImage ? 'Uploading...' : 'Upload Image'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                ),
+                              ),
+                            ],
                           ),
                           if (_coverImageUrlController.text.isNotEmpty) ...[
                             const SizedBox(height: 16),
@@ -499,6 +749,21 @@ class _EventFormScreenState extends State<EventFormScreen> {
                                     ),
                                   ),
                                 ),
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    height: 200,
+                                    color: const Color(0xFFF5F5F5),
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                loadingProgress.expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ],

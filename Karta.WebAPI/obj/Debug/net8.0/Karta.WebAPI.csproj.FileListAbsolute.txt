@@ -190,3 +190,4 @@ C:\Users\User\Desktop\Karta.ba-main\Karta.WebAPI\obj\Debug\net8.0\refint\Karta.W
 C:\Users\User\Desktop\Karta.ba-main\Karta.WebAPI\obj\Debug\net8.0\Karta.WebAPI.pdb
 C:\Users\User\Desktop\Karta.ba-main\Karta.WebAPI\obj\Debug\net8.0\Karta.WebAPI.genruntimeconfig.cache
 C:\Users\User\Desktop\Karta.ba-main\Karta.WebAPI\obj\Debug\net8.0\ref\Karta.WebAPI.dll
+C:\Users\User\Desktop\Karta.ba-main\Karta.WebAPI\obj\Debug\net8.0\Karta.WebAPI.sourcelink.json

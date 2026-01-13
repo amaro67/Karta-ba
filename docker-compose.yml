@@ -80,8 +80,8 @@ services:
       - ALLOWED_HOSTS=*
     
     volumes:
-      # Mount za wwwroot folder (slike)
-      - ./Karta.WebAPI/wwwroot:/app/wwwroot:ro
+      # Mount za wwwroot folder (slike) - read-write za upload slika
+      - ./Karta.WebAPI/wwwroot:/app/wwwroot
       # Mount za log fajlove
       - ./logs:/app/logs
     

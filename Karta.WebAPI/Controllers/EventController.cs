@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
@@ -18,7 +19,6 @@ namespace Karta.WebAPI.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [SwaggerTag("Upravljanje eventima - kreiranje, ažuriranje, brisanje i pretraživanje eventa")]
-    [ServiceFilter(typeof(ValidationFilterAttribute))]
     public class EventController : ControllerBase
     {
         private readonly IEventService _eventService;
@@ -26,6 +26,7 @@ namespace Karta.WebAPI.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IRabbitMQService _rabbitMQService;
         private readonly Karta.Service.Services.IEmailService _emailService;
+        private readonly IWebHostEnvironment _environment;
         private readonly ILogger<EventController> _logger;
         public EventController(
             IEventService eventService, 
@@ -33,6 +34,7 @@ namespace Karta.WebAPI.Controllers
             ApplicationDbContext context,
             IRabbitMQService rabbitMQService,
             Karta.Service.Services.IEmailService emailService,
+            IWebHostEnvironment environment,
             ILogger<EventController> logger)
         {
             _eventService = eventService;
@@ -40,6 +42,7 @@ namespace Karta.WebAPI.Controllers
             _context = context;
             _rabbitMQService = rabbitMQService;
             _emailService = emailService;
+            _environment = environment;
             _logger = logger;
         }
         [HttpGet]
@@ -88,6 +91,7 @@ namespace Karta.WebAPI.Controllers
         }
         [HttpPost]
         [RequirePermission("CreateEvents")]
+        [ServiceFilter(typeof(ValidationFilterAttribute))]
         public async Task<ActionResult<EventDto>> CreateEvent([FromBody] CreateEventRequest request)
         {
             _logger.LogInformation("CreateEvent called. Request: Title={Title}, Venue={Venue}, City={City}, StartsAt={StartsAt}, PriceTiersCount={PriceTiersCount}",
@@ -134,6 +138,7 @@ namespace Karta.WebAPI.Controllers
         }
         [HttpPut("{id}")]
         [RequirePermission("EditOwnEvents")]
+        [ServiceFilter(typeof(ValidationFilterAttribute))]
         public async Task<ActionResult<EventDto>> UpdateEvent(Guid id, [FromBody] UpdateEventRequest request)
         {
             if (!ModelState.IsValid)
@@ -370,9 +375,126 @@ namespace Karta.WebAPI.Controllers
 </body>
 </html>";
         }
+        [HttpPost("upload-image")]
+        [Authorize]
+        [RequirePermission("CreateEvents")]
+        [Consumes("multipart/form-data")]
+        [SwaggerOperation(Summary = "Upload slike za event", 
+                         Description = "Uploaduje sliku i vraća relativni URL koji se može koristiti za coverImageUrl")]
+        [SwaggerResponse(200, "Slika uspješno uploadovana")]
+        [SwaggerResponse(400, "Neispravan fajl")]
+        [SwaggerResponse(401, "Korisnik nije autentifikovan")]
+        [SwaggerResponse(403, "Nedovoljna prava")]
+        public async Task<ActionResult<ImageUploadResponse>> UploadImage(IFormFile file)
+        {
+            _logger.LogInformation("UploadImage endpoint called. File is null: {IsNull}, File length: {Length}", 
+                file == null, file?.Length ?? 0);
+            
+            if (file == null || file.Length == 0)
+            {
+                _logger.LogWarning("UploadImage: No file provided or file is empty");
+                return BadRequest(new { message = "Nijedan fajl nije uploadovan" });
+            }
+            
+            _logger.LogInformation("UploadImage: File received - Name: {FileName}, Length: {Length}, ContentType: {ContentType}", 
+                file.FileName, file.Length, file.ContentType);
+            // Provjeri veličinu (max 5MB)
+            if (file.Length > 5 * 1024 * 1024)
+            {
+                return BadRequest(new { message = "Slika je prevelika. Maksimalna veličina je 5MB" });
+            }
+            // Provjeri tip fajla
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                return BadRequest(new { message = "Nedozvoljeni tip fajla. Dozvoljeni su: JPG, JPEG, PNG, GIF, WEBP" });
+            }
+            try
+            {
+                // Odredi putanju do wwwroot/images
+                string webRootPath;
+                if (string.IsNullOrEmpty(_environment.WebRootPath))
+                {
+                    // Fallback na ContentRootPath/wwwroot
+                    webRootPath = Path.Combine(_environment.ContentRootPath, "wwwroot");
+                    _logger.LogWarning("WebRootPath is null, using ContentRootPath/wwwroot: {WebRootPath}", webRootPath);
+                }
+                else
+                {
+                    webRootPath = _environment.WebRootPath;
+                }
+                
+                // Kreiraj unique ime fajla
+                var fileName = $"event_{Guid.NewGuid()}{fileExtension}";
+                var imagesPath = Path.Combine(webRootPath, "images");
+                
+                _logger.LogInformation("Attempting to save image to: {ImagesPath}", imagesPath);
+                
+                // Osiguraj da folder postoji
+                if (!Directory.Exists(imagesPath))
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(imagesPath);
+                        _logger.LogInformation("Created images directory: {ImagesPath}", imagesPath);
+                    }
+                    catch (Exception dirEx)
+                    {
+                        _logger.LogError(dirEx, "Failed to create images directory: {ImagesPath}", imagesPath);
+                        return StatusCode(500, new { message = $"Greška pri kreiranju images foldera: {dirEx.Message}" });
+                    }
+                }
+                
+                var filePath = Path.Combine(imagesPath, fileName);
+                _logger.LogInformation("Saving file to: {FilePath}", filePath);
+                
+                // Spremi fajl
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+                _logger.LogInformation("Image uploaded successfully: {FileName} to {FilePath}", fileName, filePath);
+                
+                // Vrati relativni URL
+                var imageUrl = $"/images/{fileName}";
+                return Ok(new ImageUploadResponse { ImageUrl = imageUrl });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "Unauthorized access error uploading image");
+                return StatusCode(500, new { message = "Nemate dozvolu za pisanje u images folder" });
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                _logger.LogError(ex, "Directory not found error uploading image");
+                return StatusCode(500, new { message = $"Folder nije pronađen: {ex.Message}" });
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "IO error uploading image");
+                return StatusCode(500, new { message = $"Greška pri pisanju fajla: {ex.Message}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading image. Exception type: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}", 
+                    ex.GetType().Name, ex.Message, ex.StackTrace);
+                return StatusCode(500, new { message = $"Greška pri uploadovanju slike: {ex.Message}" });
+            }
+        }
     }
     public class TrackEventViewRequest
     {
         public Guid EventId { get; set; }
+    }
+    /// <summary>
+    /// Response model za upload slike
+    /// </summary>
+    public class ImageUploadResponse
+    {
+        /// <summary>
+        /// Relativni URL uploadovane slike (npr. /images/event_123.jpg)
+        /// </summary>
+        public string ImageUrl { get; set; } = string.Empty;
     }
 }

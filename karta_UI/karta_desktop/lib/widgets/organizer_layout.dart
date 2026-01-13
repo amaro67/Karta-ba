@@ -144,9 +144,9 @@ class _OrganizerLayoutState extends State<OrganizerLayout> {
       case 1:
         return const OrganizerEventsScreen();
       case 2:
-        return const OrganizerScannersScreen();
-      case 3:
         return const OrganizerSalesScreen();
+      // case 2: OrganizerScannersScreen - sakriveno za organizatore
+      // case 3: OrganizerSalesScreen - sada je na indeksu 2
       default:
         return OrganizerDashboardContent(
           onCreateEvent: _openCreateEvent,
@@ -171,9 +171,9 @@ class _OrganizerLayoutState extends State<OrganizerLayout> {
       case 1:
         return 'My Events';
       case 2:
-        return 'Scanners';
-      case 3:
         return 'Sales';
+      // case 2: 'Scanners' - sakriveno za organizatore
+      // case 3: 'Sales' - sada je na indeksu 2
       default:
         return 'Dashboard';
     }

@@ -4,6 +4,7 @@ using Karta.WebAPI.Extensions;
 using Karta.WebAPI.Filters;
 using Karta.WebAPI.Authorization;
 using Karta.WebAPI.Middleware;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using Karta.Service.Interfaces;
 using Karta.Service.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -181,7 +182,17 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    })
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.SuppressModelStateInvalidFilter = false;
     });
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 5242880; // 5MB
+    options.ValueLengthLimit = int.MaxValue;
+    options.MultipartHeadersLengthLimit = int.MaxValue;
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -238,6 +249,7 @@ builder.Services.AddSwaggerGen(c =>
     });
     c.EnableAnnotations();
     c.SchemaFilter<ErrorResponseSchemaFilter>();
+    c.OperationFilter<FileUploadOperationFilter>();
 });
 var app = builder.Build();
 app.UseSwagger();
@@ -247,7 +259,9 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
     c.DocumentTitle = "Karta.ba API Documentation";
 });
-app.UseWhen(context => !context.Request.Path.StartsWithSegments("/api/order/webhook"), app =>
+app.UseWhen(context => 
+    !context.Request.Path.StartsWithSegments("/api/order/webhook") &&
+    !context.Request.Path.StartsWithSegments("/api/Event/upload-image"), app =>
 {
     app.UseHttpsRedirection();
 });

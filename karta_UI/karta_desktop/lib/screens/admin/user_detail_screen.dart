@@ -30,6 +30,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   bool _isOrganizerVerified = false;
   bool _isVerifyingOrganizer = false;
   final List<String> _availableRoles = ['User', 'Organizer', 'Scanner', 'Admin'];
+  // Filtered roles for UI display - Scanner hidden but preserved in backend
+  List<String> get _uiAvailableRoles => _availableRoles.where((role) => role != 'Scanner').toList();
   bool _isEditing = false;
   bool _isSaving = false;
   @override
@@ -334,7 +336,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                             emailController: _emailController,
                             emailConfirmed: _emailConfirmed,
                             currentRoles: _currentRoles,
-                            availableRoles: _availableRoles,
+                            availableRoles: _uiAvailableRoles,
                             isEditing: _isEditing,
                             isOwnProfile: widget.isOwnProfile,
                             isOrganizerVerified: _isOrganizerVerified,

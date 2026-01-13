@@ -13,6 +13,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedRoleFilter;
   final List<String> _availableRoles = ['User', 'Organizer', 'Scanner', 'Admin'];
+  // Filtered roles for UI display - Scanner hidden but preserved in backend
+  List<String> get _uiAvailableRoles => _availableRoles.where((role) => role != 'Scanner').toList();
   @override
   void initState() {
     super.initState();
@@ -255,7 +257,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             value: null,
                             child: Text('Sve role'),
                           ),
-                          ..._availableRoles.map((role) => DropdownMenuItem<String>(
+                          ..._uiAvailableRoles.map((role) => DropdownMenuItem<String>(
                                 value: role,
                                 child: Row(
                                   children: [
@@ -753,7 +755,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         value: null,
                         child: Text('User (default)'),
                       ),
-                      ..._availableRoles.map((role) => DropdownMenuItem<String>(
+                      ..._uiAvailableRoles.map((role) => DropdownMenuItem<String>(
                             value: role,
                             child: Row(
                               children: [
@@ -912,7 +914,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         ),
                   ),
                   const SizedBox(height: 12),
-                  ..._availableRoles.map((role) {
+                  ..._uiAvailableRoles.map((role) {
                     final hasRole = currentRoles.contains(role);
                     return Builder(
                       builder: (context) {
