@@ -1,166 +1,157 @@
-Karta.ba
+# Karta.ba
 
 Platforma za prodaju ulaznica za događaje sa desktop aplikacijom za organizatore i mobilnom aplikacijom za korisnike.
 
-Šta je uključeno
+---
 
-Ovo je full-stack sistem za prodaju karata koji se sastoji od tri glavna dijela:
+## O projektu
 
-Backend API – .NET 8 API sa SQL Server bazom, Stripe plaćanjima i email notifikacijama
+**Karta.ba** je full-stack sistem za prodaju karata koji se sastoji od tri glavna dijela:
 
-Desktop aplikacija – Flutter aplikacija za organizatore (upravljanje događajima i kartama)
+| Komponenta | Opis |
+|------------|------|
+| **Backend API** | .NET 8 Web API sa SQL Server bazom, Stripe integracija za plaćanja i email notifikacije |
+| **Desktop aplikacija** | Flutter aplikacija namijenjena organizatorima za upravljanje događajima i kartama |
+| **Mobilna aplikacija** | Flutter aplikacija za krajnje korisnike za pregledanje događaja i kupovinu karata |
 
-Mobilna aplikacija – Flutter aplikacija za korisnike (kupovina karata)
+---
 
-Pokretanje projekta
-Preduslovi
+## Preduslovi
 
-Potrebno je da imate instalirano:
+Prije pokretanja projekta, potrebno je instalirati:
 
-Docker i Docker Compose
+- [Docker](https://www.docker.com/) i Docker Compose
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Flutter SDK](https://flutter.dev/docs/get-started/install)
+- IDE po izboru (VS Code ili Visual Studio)
 
-.NET 8 SDK
+---
 
-Flutter SDK
+## Pokretanje projekta
 
-IDE (VS Code, Rider ili Visual Studio)
+### Backend (API + Baza + RabbitMQ)
 
-Brzi start – Backend
-# Pokretanje svih servisa (baza, API, RabbitMQ)
+```bash
+# Pokretanje svih servisa
 docker-compose up --build
+```
 
+Nakon uspješnog pokretanja, API je dostupan na:
+- **Swagger dokumentacija:** http://localhost:8080/swagger/index.html
+- **API endpoint:** http://localhost:8080
+- **RabbitMQ Management:** http://localhost:15672 (korisnik: `guest`, lozinka: `guest`)
 
-API će biti dostupan na:
-http://localhost:8080/swagger/index.html
+---
 
-Tipovi korisničkih naloga
+## Tipovi korisničkih naloga
 
-Postoje tri tipa naloga, svaki sa različitim pravima pristupa:
+Sistem podržava tri tipa korisnika sa različitim pravima pristupa.
 
-1. Admin (Super korisnik)
+> **Lozinka za sve test naloge:** `Password123!`
 
-Ima potpuni pristup sistemu
+### 1. Admin (Super korisnik)
 
-Samo admin može kreirati druge admin naloge
+- Potpuni pristup svim funkcionalnostima sistema
+- Jedini može kreirati druge admin naloge
+- Koristi se za administraciju platforme
 
-Koristi se za administraciju platforme
+| Email | Lozinka |
+|-------|---------|
+| `amar.omerovic0607@gmail.com` | `Password123!` |
 
-Test Admin nalog:
+---
 
-Email: amar.omerovic0607@gmail.com
+### 2. Organizator
 
-Lozinka: Password123!
+- Registracija putem **desktop aplikacije**
+- Kreira i upravlja vlastitim događajima
+- Pristup prodajnim izvještajima i analitici
 
-2. Organizator
+| Email | Lozinka |
+|-------|---------|
+| `adil+1@edu.fit.ba` | `Password123!` |
 
-Kreira se registracijom putem desktop aplikacije
+---
 
-Može kreirati i upravljati vlastitim događajima
+### 3. Korisnik (User)
 
-Ima uvid u prodaju i osnovnu analitiku
+- Registracija putem **mobilne aplikacije**
+- Pregledanje događaja i kupovina karata
+- Pristup kupljenim kartama
+- Ulazak na događaje putem QR koda
 
-Test Organizator nalog:
+| Email | Lozinka |
+|-------|---------|
+| `adil@edu.fit.ba` | `Password123!` |
 
-Email: adil+1@edu.fit.ba
+---
 
-Lozinka: Password123!
+## Tok kreiranja naloga
 
-3. User (Obični korisnik)
+| Tip naloga | Način kreiranja |
+|------------|-----------------|
+| **Admin** | Samo postojeći admin može kreirati novog admina. Nema samostalne registracije. |
+| **Organizator** | Registracija putem desktop aplikacije. Prava se automatski dodjeljuju. |
+| **Korisnik** | Registracija putem mobilne aplikacije. |
 
-Kreira se registracijom putem mobilne aplikacije
+---
 
-Može pregledati događaje i kupovati karte
+## Baza podataka
 
-Može pregledati kupljene karte
+### Povezivanje na bazu
 
-Ulazak na događaje putem QR koda
+| Parametar | Vrijednost |
+|-----------|------------|
+| Host | `localhost` |
+| Port | `1433` |
+| User | `sa` |
+| Password | `KartaPassword2024!` |
+| Database | `KartaDb` |
 
-Test User nalog:
+### Resetovanje baze
 
-Email: adil@edu.fit.ba
-
-Tok kreiranja naloga
-
-Admin nalozi:
-
-Samo postojeći admin može kreirati novog admina
-
-Ne postoji opcija samostalne registracije
-
-Organizator nalozi:
-
-Registracija putem desktop aplikacije
-
-Nakon registracije automatski se dodjeljuju prava organizatora
-
-User nalozi:
-
-Registracija putem mobilne aplikacije
-
-Nakon prijave moguće je pregledati i kupovati karte
-
-Migracije baze podataka
-
-Ako želite resetovati bazu ili ručno pokrenuti migracije:
-
+```bash
 # Zaustavi kontejnere
 docker-compose down
 
-# Obriši volume baze (UPOZORENJE: briše sve podatke)
+# Obriši volume baze (UPOZORENJE: briše sve podatke!)
 docker volume rm karta_sqlserver_data
 
 # Ponovo pokreni sve
 docker-compose up --build
+```
 
+> **Napomena:** Migracije se automatski izvršavaju prilikom pokretanja API-ja.
 
-Migracije se automatski izvršavaju prilikom pokretanja API-ja.
+---
 
-Važni API URL-ovi
+## Testiranje plaćanja
 
-API: http://localhost:8080
+Koristi Stripe test kartice za simulaciju plaćanja:
 
-RabbitMQ Management: http://localhost:15672 (guest / guest)
+| Scenarij | Broj kartice |
+|----------|--------------|
+| Uspješno plaćanje | `4242 4242 4242 4242` |
+| Odbijena kartica | `4000 0000 0000 0002` |
 
-Swagger dokumentacija: http://localhost:8080/swagger
+> Za datum isteka koristi bilo koji budući datum, a za CVC bilo koje 3 cifre.
 
-Česti problemi
+---
 
-Docker se ne pokreće:
+## Česti problemi
 
-Provjeriti da portovi 1433, 5672, 8080 ili 15672 nisu zauzeti
+### Docker se ne pokreće
 
-Probati:
+1. Provjeri da portovi `1433`, `5672`, `8080` i `15672` nisu zauzeti
+2. Pokušaj ponovo pokrenuti:
 
+```bash
 docker-compose down
 docker-compose up --build
+```
 
+### Neuspješna prijava
 
-Neuspješna prijava:
-
-Koristiti admin podatke navedene iznad
-
-Provjeriti da li se baza pravilno inicijalizovala (Docker logovi)
-
-Probati registrovati novog korisnika
-
-Povezivanje na bazu:
-
-Host: localhost
-
-Port: 1433
-
-User: sa
-
-Password: provjeriti .env fajl (KartaPassword2024!)
-
-Database: KartaDb
-
-Testiranje plaćanja
-
-Koristiti Stripe test kartice:
-
-Uspješno plaćanje: 4242 4242 4242 4242
-
-Odbijena kartica: 4000 0000 0000 0002
-
-Bilo koji budući datum isteka i CVC
+1. Koristi test podatke navedene u sekciji [Tipovi korisničkih naloga](#tipovi-korisničkih-naloga)
+2. Provjeri Docker logove da li se baza pravilno inicijalizovala
+3. Pokušaj registrovati novog korisnika
