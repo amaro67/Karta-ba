@@ -77,6 +77,7 @@ Sistem podržava tri tipa korisnika sa različitim pravima pristupa.
 
 - Registracija putem **mobilne aplikacije**
 - Pregledanje događaja i kupovina karata
+- Dodavanje događaja u favorite (omiljeni)
 - Pristup kupljenim kartama
 - Ulazak na događaje putem QR koda
 
