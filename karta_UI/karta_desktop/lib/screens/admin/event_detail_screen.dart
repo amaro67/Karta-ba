@@ -4,8 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../providers/event_provider.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/reviews_provider.dart';
 import '../../model/event/event_dto.dart';
-import '../../model/order/order_dto.dart';
+import '../../models/review_dto.dart';
 import 'event_form_screen.dart';
 import '../../utils/error_dialog.dart';
 import '../../utils/api_client.dart';
@@ -27,7 +28,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       eventProvider.clearCurrentEvent();
       eventProvider.loadEvent(widget.eventId);
       _loadSalesData();
+      _loadReviews();
     });
+  }
+
+  Future<void> _loadReviews() async {
+    final reviewsProvider = context.read<ReviewsProvider>();
+    await reviewsProvider.loadEventReviews(widget.eventId);
   }
 
   Future<void> _loadSalesData() async {
@@ -521,6 +528,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                     ),
                         ),
                       ],
+                      const SizedBox(height: 20),
+                      _ReviewsSection(
+                        eventId: widget.eventId,
+                        onRefresh: _loadReviews,
+                      ),
                     ],
                   ),
                 ),
@@ -887,6 +899,259 @@ class _SalesChart extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ReviewsSection extends StatelessWidget {
+  final String eventId;
+  final VoidCallback onRefresh;
+
+  const _ReviewsSection({
+    required this.eventId,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ReviewsProvider>(
+      builder: (context, reviewsProvider, child) {
+        return _SectionCard(
+          title: 'Reviews',
+          titleAction: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (reviewsProvider.totalCount > 0) ...[
+                _RatingDisplay(
+                  rating: reviewsProvider.averageRating,
+                  totalCount: reviewsProvider.totalCount,
+                ),
+                const SizedBox(width: 8),
+              ],
+              IconButton(
+                icon: reviewsProvider.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh),
+                onPressed: reviewsProvider.isLoading ? null : onRefresh,
+                tooltip: 'Refresh reviews',
+                iconSize: 20,
+              ),
+            ],
+          ),
+          child: reviewsProvider.isLoading
+              ? const Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              : reviewsProvider.reviews.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.rate_review_outlined,
+                              size: 48,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No reviews yet',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        ...reviewsProvider.reviews.map((review) => _ReviewCard(review: review)),
+                        if (reviewsProvider.totalCount > reviewsProvider.reviews.length)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: TextButton(
+                              onPressed: () {
+                                // Could implement pagination here
+                              },
+                              child: Text(
+                                'View all ${reviewsProvider.totalCount} reviews',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+        );
+      },
+    );
+  }
+}
+
+class _RatingDisplay extends StatelessWidget {
+  final double rating;
+  final int totalCount;
+
+  const _RatingDisplay({
+    required this.rating,
+    required this.totalCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star, color: Colors.amber, size: 18),
+          const SizedBox(width: 4),
+          Text(
+            rating.toStringAsFixed(1),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '($totalCount)',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  final ReviewDto review;
+
+  const _ReviewCard({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFE0E0E0),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                radius: 20,
+                child: Text(
+                  review.userName.isNotEmpty ? review.userName[0].toUpperCase() : '?',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.userName.isNotEmpty ? review.userName : 'Anonymous',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      DateFormat('MMM dd, yyyy').format(review.createdAt),
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _StarRating(rating: review.rating),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            review.title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            review.content,
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 14,
+              height: 1.4,
+            ),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (review.updatedAt != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Edited ${DateFormat('MMM dd, yyyy').format(review.updatedAt!)}',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StarRating extends StatelessWidget {
+  final int rating;
+
+  const _StarRating({required this.rating});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        return Icon(
+          index < rating ? Icons.star : Icons.star_border,
+          color: Colors.amber,
+          size: 18,
+        );
+      }),
     );
   }
 }

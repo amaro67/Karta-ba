@@ -7,6 +7,7 @@ class EventDto {
   final String title;
   final String slug;
   final String? description;
+  @JsonKey(name: 'venueName')
   final String venue;
   final String city;
   final String country;
@@ -14,6 +15,7 @@ class EventDto {
   final DateTime startsAt;
   @JsonKey(name: 'endsAt')
   final DateTime? endsAt;
+  @JsonKey(name: 'categoryName')
   final String category;
   final String? tags;
   final String status;
@@ -23,6 +25,8 @@ class EventDto {
   final DateTime createdAt;
   @JsonKey(name: 'priceTiers')
   final List<PriceTierDto> priceTiers;
+  final String? venueId;
+  final String? categoryId;
   const EventDto({
     required this.id,
     required this.title,
@@ -39,6 +43,8 @@ class EventDto {
     this.coverImageUrl,
     required this.createdAt,
     required this.priceTiers,
+    this.venueId,
+    this.categoryId,
   });
   factory EventDto.fromJson(Map<String, dynamic> json) {
     try {
@@ -52,10 +58,10 @@ class EventDto {
         final title = json['title']?.toString() ?? json['Title']?.toString() ?? '';
         final slug = json['slug']?.toString() ?? json['Slug']?.toString() ?? '';
         final description = json['description']?.toString() ?? json['Description']?.toString();
-        final venue = json['venue']?.toString() ?? json['Venue']?.toString() ?? '';
+        final venue = json['venueName']?.toString() ?? json['VenueName']?.toString() ?? json['venue']?.toString() ?? json['Venue']?.toString() ?? '';
         final city = json['city']?.toString() ?? json['City']?.toString() ?? '';
         final country = json['country']?.toString() ?? json['Country']?.toString() ?? '';
-        final category = json['category']?.toString() ?? json['Category']?.toString() ?? '';
+        final category = json['categoryName']?.toString() ?? json['CategoryName']?.toString() ?? json['category']?.toString() ?? json['Category']?.toString() ?? '';
         final tags = json['tags']?.toString() ?? json['Tags']?.toString();
         final status = json['status']?.toString() ?? json['Status']?.toString() ?? '';
         final coverImageUrl = json['coverImageUrl']?.toString() ?? json['CoverImageUrl']?.toString();
@@ -71,6 +77,8 @@ class EventDto {
                 .map((e) => PriceTierDto.fromJson(e as Map<String, dynamic>))
                 .toList()
             : <PriceTierDto>[];
+        final venueId = json['venueId']?.toString() ?? json['VenueId']?.toString();
+        final categoryId = json['categoryId']?.toString() ?? json['CategoryId']?.toString();
         return EventDto(
           id: id,
           title: title,
@@ -87,6 +95,8 @@ class EventDto {
           coverImageUrl: coverImageUrl,
           createdAt: createdAt,
           priceTiers: priceTiers,
+          venueId: venueId,
+          categoryId: categoryId,
         );
       } catch (fallbackError) {
         print('🔴 Fallback parsing also failed: $fallbackError');

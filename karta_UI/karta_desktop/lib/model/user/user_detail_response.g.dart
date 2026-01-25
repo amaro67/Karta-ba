@@ -13,7 +13,7 @@ UserDetailResponse _$UserDetailResponseFromJson(Map<String, dynamic> json) =>
       firstName: json['FirstName'] as String,
       lastName: json['LastName'] as String,
       emailConfirmed: json['EmailConfirmed'] as bool,
-      isOrganizerVerified: json['IsOrganizerVerified'] as bool? ?? false,
+      isOrganizerVerified: json['IsOrganizerVerified'] as bool,
       createdAt: DateTime.parse(json['CreatedAt'] as String),
       lastLoginAt: json['LastLoginAt'] == null
           ? null

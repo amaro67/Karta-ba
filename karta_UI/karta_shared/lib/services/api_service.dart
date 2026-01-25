@@ -1168,4 +1168,41 @@ class ApiClient {
       return [];
     }
   }
+
+  // ============ REVIEWS API ============
+
+  static Future<Map<String, dynamic>> getEventReviews(String eventId, {int page = 1, int pageSize = 10}) async {
+    return await get('/Review/event/$eventId?page=$page&pageSize=$pageSize');
+  }
+
+  static Future<bool> canUserReviewEvent(String token, String eventId) async {
+    try {
+      final data = await get('/Review/event/$eventId/can-review', token: token);
+      return data['canReview'] == true;
+    } catch (e) {
+      print('Error checking can review: $e');
+      return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getUserReviewForEvent(String token, String eventId) async {
+    try {
+      return await get('/Review/event/$eventId/my-review', token: token);
+    } catch (e) {
+      // 404 is expected if user hasn't reviewed
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> createReview(String token, String eventId, Map<String, dynamic> request) async {
+    return await post('/Review/event/$eventId', request, token: token);
+  }
+
+  static Future<Map<String, dynamic>> updateReview(String token, String reviewId, Map<String, dynamic> request) async {
+    return await put('/Review/$reviewId', request, token: token);
+  }
+
+  static Future<void> deleteReview(String token, String reviewId) async {
+    return await delete('/Review/$reviewId', token: token);
+  }
 }

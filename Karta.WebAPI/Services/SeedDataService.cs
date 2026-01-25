@@ -36,7 +36,7 @@ namespace Karta.WebAPI.Services
                     var createResult = await userManager.CreateAsync(adminUser, adminPassword);
                     if (!createResult.Succeeded)
                     {
-                        logger.LogError("Greška pri kreiranju admin korisnika: {Errors}", 
+                        logger.LogError("Greška pri kreiranju admin korisnika: {Errors}",
                             string.Join(", ", createResult.Errors.Select(e => e.Description)));
                         return;
                     }
@@ -50,7 +50,7 @@ namespace Karta.WebAPI.Services
                 }
                 else
                 {
-                    logger.LogWarning("Nije moguće ažurirati password za {Email}: {Errors}", 
+                    logger.LogWarning("Nije moguće ažurirati password za {Email}: {Errors}",
                         adminEmail, string.Join(", ", passwordResult.Errors.Select(e => e.Description)));
                 }
                 if (await userManager.IsInRoleAsync(adminUser, "Admin"))
@@ -65,7 +65,7 @@ namespace Karta.WebAPI.Services
                 }
                 else
                 {
-                    logger.LogError("Greška pri dodjeljivanju Admin role korisniku {Email}: {Errors}", 
+                    logger.LogError("Greška pri dodjeljivanju Admin role korisniku {Email}: {Errors}",
                         adminUser.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
                 }
             }
@@ -74,6 +74,7 @@ namespace Karta.WebAPI.Services
                 logger.LogError(ex, "Greška pri seed-ovanju admin korisnika");
             }
         }
+
         public static async Task SeedAllData(IServiceProvider serviceProvider)
         {
             var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
@@ -83,44 +84,92 @@ namespace Karta.WebAPI.Services
             try
             {
                 logger.LogInformation("Počinje seed-ovanje podataka...");
-                
-                // Uvijek kreiraj testne korisnike
+
+                // 1. Uvijek kreiraj testne korisnike
                 logger.LogInformation("Kreiranje testnih korisnika...");
                 var testUsers = await CreateTestUsersAsync(userManager, roleManager, logger);
                 logger.LogInformation($"Kreirano {testUsers.Count} testnih korisnika.");
-                
+
                 if (await context.Events.AnyAsync())
                 {
                     logger.LogWarning("Baza već sadrži podatke. Preskačem seed-ovanje ostalih podataka.");
                     return;
                 }
+
+                // 2. Kreiranje production korisnika
                 logger.LogInformation("Kreiranje korisnika...");
                 var users = await CreateUsersAsync(userManager, roleManager, logger);
                 logger.LogInformation($"Kreirano {users.Count} korisnika.");
-                logger.LogInformation("Kreiranje događaja...");
+
+                // 3. Kreiranje kategorija
+                logger.LogInformation("Kreiranje kategorija...");
+                var categories = await CreateCategoriesAsync(context, logger);
+                logger.LogInformation($"Kreirano {categories.Count} kategorija.");
+
+                // 4. Kreiranje venue-a
+                logger.LogInformation("Kreiranje venue-a...");
                 var organizers = users.Where(u => userManager.IsInRoleAsync(u, "Organizer").Result).ToList();
-                var events = await CreateEventsAsync(context, organizers, logger);
+                var venues = await CreateVenuesAsync(context, organizers, logger);
+                logger.LogInformation($"Kreirano {venues.Count} venue-a.");
+
+                // 5. Kreiranje događaja (20 events linked to categories and venues)
+                logger.LogInformation("Kreiranje događaja...");
+                var events = await CreateEventsAsync(context, organizers, categories, venues, logger);
                 logger.LogInformation($"Kreirano {events.Count} događaja.");
+
+                // 6. Kreiranje PriceTier-ova
                 logger.LogInformation("Kreiranje PriceTier-ova...");
                 var priceTiers = await CreatePriceTiersAsync(context, events, logger);
                 logger.LogInformation($"Kreirano {priceTiers.Count} PriceTier-ova.");
+
+                // 7. Kreiranje narudžbi
                 logger.LogInformation("Kreiranje narudžbi...");
                 var regularUsers = users.Where(u => userManager.IsInRoleAsync(u, "User").Result).ToList();
                 var orders = await CreateOrdersAsync(context, regularUsers, events, priceTiers, logger);
                 logger.LogInformation($"Kreirano {orders.Count} narudžbi.");
+
+                // 8. Kreiranje admin user narudžbi
+                logger.LogInformation("Kreiranje admin user narudžbi...");
+                var adminUser = await userManager.FindByEmailAsync("amar.omerovic0607@gmail.com");
+                var adminOrders = await CreateAdminUserOrdersAsync(context, adminUser, events, priceTiers, logger);
+                logger.LogInformation($"Kreirano {adminOrders.Count} admin narudžbi.");
+
+                // Combine all orders for order items creation
+                var allOrders = orders.Concat(adminOrders).ToList();
+
+                // 9. Kreiranje OrderItem-ova
                 logger.LogInformation("Kreiranje OrderItem-ova...");
                 var orderItems = await CreateOrderItemsAsync(context, orders, events, priceTiers, logger);
                 logger.LogInformation($"Kreirano {orderItems.Count} OrderItem-ova.");
+
+                // 10. Kreiranje Ticket-ova
                 logger.LogInformation("Kreiranje Ticket-ova...");
                 var tickets = await CreateTicketsAsync(context, orderItems, logger);
                 logger.LogInformation($"Kreirano {tickets.Count} Ticket-ova.");
+
+                // 11. Kreiranje Reviews
+                logger.LogInformation("Kreiranje recenzija...");
+                var allUsers = users.Concat(testUsers).ToList();
+                if (adminUser != null) allUsers.Add(adminUser);
+                var reviews = await CreateReviewsAsync(context, allUsers, events, adminUser, logger);
+                logger.LogInformation($"Kreirano {reviews.Count} recenzija.");
+
+                // 12. Kreiranje UserFavorites
+                logger.LogInformation("Kreiranje favorita...");
+                var favorites = await CreateUserFavoritesAsync(context, allUsers, events, adminUser, logger);
+                logger.LogInformation($"Kreirano {favorites.Count} favorita.");
+
+                // 13. Kreiranje ScanLog-ova
                 logger.LogInformation("Kreiranje ScanLog-ova...");
                 var scanLogs = await CreateScanLogsAsync(context, tickets, orderItems, logger);
                 logger.LogInformation($"Kreirano {scanLogs.Count} ScanLog-ova.");
+
+                // 14. Kreiranje EventScannerAssignment-ova
                 logger.LogInformation("Kreiranje EventScannerAssignment-ova...");
                 var scanners = users.Where(u => userManager.IsInRoleAsync(u, "Scanner").Result).ToList();
                 var assignments = await CreateEventScannerAssignmentsAsync(context, events, scanners, logger);
                 logger.LogInformation($"Kreirano {assignments.Count} EventScannerAssignment-ova.");
+
                 await context.SaveChangesAsync();
                 logger.LogInformation("Seed-ovanje podataka uspješno završeno!");
             }
@@ -130,6 +179,199 @@ namespace Karta.WebAPI.Services
                 throw;
             }
         }
+
+        private static async Task<List<Category>> CreateCategoriesAsync(
+            ApplicationDbContext context,
+            ILogger<SeedDataService> logger)
+        {
+            var categories = new List<Category>
+            {
+                new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Muzika",
+                    Slug = "muzika",
+                    Description = "Koncerti, festivali i muzički događaji",
+                    DisplayOrder = 1,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Sport",
+                    Slug = "sport",
+                    Description = "Sportski događaji i utakmice",
+                    DisplayOrder = 2,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Kultura",
+                    Slug = "kultura",
+                    Description = "Kazalište, izložbe i kulturni događaji",
+                    DisplayOrder = 3,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Tehnologija",
+                    Slug = "tehnologija",
+                    Description = "Tech konferencije i hackathoni",
+                    DisplayOrder = 4,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Edukacija",
+                    Slug = "edukacija",
+                    Description = "Radionice, seminari i predavanja",
+                    DisplayOrder = 5,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Zabava",
+                    Slug = "zabava",
+                    Description = "Stand-up, zabavni programi",
+                    DisplayOrder = 6,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                }
+            };
+
+            context.Categories.AddRange(categories);
+            await context.SaveChangesAsync();
+            return categories;
+        }
+
+        private static async Task<List<Venue>> CreateVenuesAsync(
+            ApplicationDbContext context,
+            List<ApplicationUser> organizers,
+            ILogger<SeedDataService> logger)
+        {
+            var defaultOrganizer = organizers.FirstOrDefault()?.Id ?? "";
+            var venues = new List<Venue>
+            {
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "BKC Sarajevo",
+                    Address = "Maršala Tita 56",
+                    City = "Sarajevo",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 2000,
+                    Latitude = 43.8563,
+                    Longitude = 18.4131,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Dom Mladih",
+                    Address = "Kulina Bana 6",
+                    City = "Sarajevo",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 1500,
+                    Latitude = 43.8580,
+                    Longitude = 18.4247,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Skenderija",
+                    Address = "Terezije bb",
+                    City = "Sarajevo",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 3000,
+                    Latitude = 43.8519,
+                    Longitude = 18.4176,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Arena Banja Luka",
+                    Address = "Bulevar vojvode Petra Bojovića 1A",
+                    City = "Banja Luka",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 5000,
+                    Latitude = 44.7722,
+                    Longitude = 17.1910,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Centar za Kulturu",
+                    Address = "Trg hrvatskih velikana bb",
+                    City = "Mostar",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 800,
+                    Latitude = 43.3438,
+                    Longitude = 17.8078,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Dom Armije",
+                    Address = "Trg Slobode 1",
+                    City = "Tuzla",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 1200,
+                    Latitude = 44.5384,
+                    Longitude = 18.6763,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Arena Zenica",
+                    Address = "Stadion Bilino polje",
+                    City = "Zenica",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 4000,
+                    Latitude = 44.2017,
+                    Longitude = 17.9077,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Hotel Neum",
+                    Address = "Obala kralja Tvrtka bb",
+                    City = "Neum",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 500,
+                    Latitude = 42.9225,
+                    Longitude = 17.6159,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                }
+            };
+
+            context.Venues.AddRange(venues);
+            await context.SaveChangesAsync();
+            return venues;
+        }
+
         private static async Task<List<ApplicationUser>> CreateTestUsersAsync(
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager,
@@ -137,7 +379,7 @@ namespace Karta.WebAPI.Services
         {
             var users = new List<ApplicationUser>();
             var password = "Password123!";
-            
+
             // Create test users with adil@edu.fit.ba email pattern
             // User (regular user)
             var existingTestUser = await userManager.FindByEmailAsync("adil@edu.fit.ba");
@@ -169,7 +411,7 @@ namespace Karta.WebAPI.Services
                 users.Add(existingTestUser);
                 logger.LogInformation($"Test korisnik {existingTestUser.Email} već postoji.");
             }
-            
+
             // Organizer
             var existingOrganizer = await userManager.FindByEmailAsync("adil+1@edu.fit.ba");
             if (existingOrganizer == null)
@@ -201,7 +443,7 @@ namespace Karta.WebAPI.Services
                 users.Add(existingOrganizer);
                 logger.LogInformation($"Test organizator {existingOrganizer.Email} već postoji.");
             }
-            
+
             // Scanner
             var existingScanner = await userManager.FindByEmailAsync("adil+2@edu.fit.ba");
             if (existingScanner == null)
@@ -232,10 +474,10 @@ namespace Karta.WebAPI.Services
                 users.Add(existingScanner);
                 logger.LogInformation($"Test scanner {existingScanner.Email} već postoji.");
             }
-            
+
             return users;
         }
-        
+
         private static async Task<List<ApplicationUser>> CreateUsersAsync(
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager,
@@ -243,7 +485,7 @@ namespace Karta.WebAPI.Services
         {
             var users = new List<ApplicationUser>();
             var password = "Password123!";
-            
+
             // Original seed data
             for (int i = 1; i <= 4; i++)
             {
@@ -305,50 +547,90 @@ namespace Karta.WebAPI.Services
             }
             return users;
         }
+
         private static async Task<List<Event>> CreateEventsAsync(
             ApplicationDbContext context,
             List<ApplicationUser> organizers,
+            List<Category> categories,
+            List<Venue> venues,
             ILogger<SeedDataService> logger)
         {
             var events = new List<Event>();
-            var categories = new[] { "Muzika", "Sport", "Kultura", "Tehnologija", "Edukacija", "Zabava", "Biznis", "Umjetnost" };
-            var cities = new[] { "Sarajevo", "Banja Luka", "Mostar", "Tuzla", "Zenica", "Bihać", "Brčko", "Trebinje" };
             var statuses = new[] { "Published", "Draft", "Archived", "Cancelled" };
-            var eventTitles = new[]
+
+            // Event data with category and venue mappings
+            var eventData = new[]
             {
-                "Rock Koncert 2024", "Fudbalska Utakmica", "Jazz Festival", "Tech Conference",
-                "Kazališna Predstava", "Koncert Narodne Muzike", "Basketball Turnir", "Film Festival",
-                "Kulinarski Festival", "Književni Večer"
+                // Music events (Category: Muzika)
+                new { Title = "Rock Koncert 2024", CategoryIndex = 0, VenueIndex = 2, Description = "Najveći rock koncert godine! Nastupaju domaće i regionalne rock zvijezde." },
+                new { Title = "Jazz Festival Sarajevo", CategoryIndex = 0, VenueIndex = 0, Description = "Tradicionalni jazz festival sa svjetskim izvođačima i lokalnim talentima." },
+                new { Title = "Koncert Narodne Muzike", CategoryIndex = 0, VenueIndex = 3, Description = "Večer posvećena tradicionalnoj bosanskoj muzici s najboljim izvođačima." },
+                new { Title = "Elektronska Muzika Party", CategoryIndex = 0, VenueIndex = 1, Description = "Noć elektronske muzike s vrhunskim DJ-evima iz regije." },
+                new { Title = "Operski Gala Koncert", CategoryIndex = 0, VenueIndex = 0, Description = "Svečani operski koncert s najboljim glasovima BiH." },
+
+                // Sports events (Category: Sport)
+                new { Title = "Fudbalska Utakmica FK Sarajevo", CategoryIndex = 1, VenueIndex = 2, Description = "Derbi susret FK Sarajevo protiv glavnog rivala. Ne propustite!" },
+                new { Title = "Basketball Turnir Gradski", CategoryIndex = 1, VenueIndex = 6, Description = "Gradski košarkaški turnir za amaterske ekipe." },
+                new { Title = "Gaming Tournament ESL", CategoryIndex = 1, VenueIndex = 3, Description = "Najveći esport turnir u BiH. Counter-Strike, Dota 2 i League of Legends." },
+
+                // Culture events (Category: Kultura)
+                new { Title = "Kazališna Predstava - Derviš i Smrt", CategoryIndex = 2, VenueIndex = 0, Description = "Klasična predstava po djelu Meše Selimovića." },
+                new { Title = "Film Festival Sarajevo", CategoryIndex = 2, VenueIndex = 1, Description = "Međunarodni filmski festival s premijerama i gostima." },
+                new { Title = "Festival Folklora BiH", CategoryIndex = 2, VenueIndex = 4, Description = "Smotra folklornih ansambala iz cijele Bosne i Hercegovine." },
+                new { Title = "Književni Večer", CategoryIndex = 2, VenueIndex = 5, Description = "Promocija knjiga i susret s poznatim piscima." },
+
+                // Technology events (Category: Tehnologija)
+                new { Title = "Tech Conference BiH 2024", CategoryIndex = 3, VenueIndex = 2, Description = "Godišnja tech konferencija s predavanjima o AI, blockchain i cloud tehnologijama." },
+                new { Title = "AI Workshop za Početnike", CategoryIndex = 3, VenueIndex = 1, Description = "Praktična radionica o umjetnoj inteligenciji za sve nivoe znanja." },
+                new { Title = "Startup Pitch Event", CategoryIndex = 3, VenueIndex = 0, Description = "Predstavljanje startup ideja pred investitorima i mentorima." },
+
+                // Education events (Category: Edukacija)
+                new { Title = "Marketing Masterclass", CategoryIndex = 4, VenueIndex = 5, Description = "Dvodnevna radionica digitalnog marketinga s praktičnim vježbama." },
+                new { Title = "Wine & Dine Experience", CategoryIndex = 4, VenueIndex = 7, Description = "Edukativna degustacija vina s gastro uparivanjem." },
+
+                // Entertainment events (Category: Zabava)
+                new { Title = "Stand-up Comedy Night", CategoryIndex = 5, VenueIndex = 1, Description = "Večer smijeha s najboljim komičarima iz regije." },
+                new { Title = "Kulinarski Festival", CategoryIndex = 5, VenueIndex = 7, Description = "Festival hrane s degustacijama, radionicama i natjecanjima." },
+                new { Title = "New Year's Eve Celebration", CategoryIndex = 5, VenueIndex = 3, Description = "Najveća novogodišnja zabava u gradu! Muzika, vatromet i zabava do zore." }
             };
-            for (int i = 0; i < 10; i++)
+
+            for (int i = 0; i < eventData.Length; i++)
             {
+                var data = eventData[i];
                 var organizer = organizers[i % organizers.Count];
-                var startsAt = DateTimeOffset.UtcNow.AddDays(30 + i * 7);
-                var endsAt = startsAt.AddHours(3);
+                var category = categories[data.CategoryIndex];
+                var venue = venues[data.VenueIndex];
+                var startsAt = DateTimeOffset.UtcNow.AddDays(15 + i * 5);
+                var endsAt = startsAt.AddHours(3 + (i % 3));
+
                 var eventEntity = new Event
                 {
                     Id = Guid.NewGuid(),
-                    Title = eventTitles[i],
-                    Slug = GenerateSlug(eventTitles[i], i),
-                    Description = $"Opis događaja {i + 1}. Ovo je detaljan opis događaja koji se održava u {cities[i % cities.Length]}.",
-                    Venue = $"Dvorana {i + 1}",
-                    City = cities[i % cities.Length],
+                    Title = data.Title,
+                    Slug = GenerateSlug(data.Title, i),
+                    Description = data.Description,
+                    Venue = venue.Name,
+                    City = venue.City,
                     Country = "Bosna i Hercegovina",
                     StartsAt = startsAt,
                     EndsAt = endsAt,
-                    Category = categories[i % categories.Length],
-                    Tags = $"{categories[i % categories.Length]}, {cities[i % cities.Length]}",
-                    Status = i < 6 ? "Published" : (i < 8 ? "Draft" : statuses[i % statuses.Length]),
-                    CoverImageUrl = $"/images/event{(i % 2) + 1}.jpg",
-                    CreatedAt = DateTime.UtcNow.AddDays(-(10 - i)),
+                    Category = category.Name,
+                    CategoryId = category.Id,
+                    VenueId = venue.Id,
+                    Tags = $"{category.Name}, {venue.City}, 2024",
+                    Status = i < 15 ? "Published" : (i < 18 ? "Draft" : statuses[i % statuses.Length]),
+                    CoverImageUrl = $"/images/event{(i % 5) + 1}.jpg",
+                    CreatedAt = DateTime.UtcNow.AddDays(-(20 - i)),
                     CreatedBy = organizer.Id
                 };
                 events.Add(eventEntity);
             }
+
             context.Events.AddRange(events);
             await context.SaveChangesAsync();
             return events;
         }
+
         private static string GenerateSlug(string title, int index)
         {
             var slug = title.ToLower()
@@ -357,9 +639,230 @@ namespace Karta.WebAPI.Services
                 .Replace("ć", "c")
                 .Replace("đ", "d")
                 .Replace("š", "s")
-                .Replace("ž", "z");
+                .Replace("ž", "z")
+                .Replace("'", "");
             return $"{slug}-{index + 1}";
         }
+
+        private static async Task<List<Order>> CreateAdminUserOrdersAsync(
+            ApplicationDbContext context,
+            ApplicationUser? adminUser,
+            List<Event> events,
+            List<PriceTier> priceTiers,
+            ILogger<SeedDataService> logger)
+        {
+            var orders = new List<Order>();
+            if (adminUser == null)
+            {
+                logger.LogWarning("Admin user not found, skipping admin orders creation.");
+                return orders;
+            }
+
+            // Create 3 orders for admin user with paid status
+            var publishedEvents = events.Where(e => e.Status == "Published").Take(6).ToList();
+
+            for (int i = 0; i < 3; i++)
+            {
+                var order = new Order
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = adminUser.Id,
+                    TotalAmount = 0m,
+                    Currency = "BAM",
+                    Status = "Paid",
+                    StripePaymentIntentId = $"pi_admin_{i + 1}",
+                    CreatedAt = DateTime.UtcNow.AddDays(-(30 - i * 10))
+                };
+
+                // Add 1-2 events per order
+                var eventCount = i == 0 ? 2 : (i == 1 ? 2 : 1);
+                for (int j = 0; j < eventCount && (i * 2 + j) < publishedEvents.Count; j++)
+                {
+                    var eventEntity = publishedEvents[i * 2 + j];
+                    var eventPriceTiers = priceTiers.Where(pt => pt.EventId == eventEntity.Id).ToList();
+                    if (!eventPriceTiers.Any()) continue;
+
+                    var priceTier = eventPriceTiers.First();
+                    var qty = 2;
+
+                    var orderItem = new OrderItem
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = order.Id,
+                        EventId = eventEntity.Id,
+                        PriceTierId = priceTier.Id,
+                        Qty = qty,
+                        UnitPrice = priceTier.Price
+                    };
+
+                    order.TotalAmount += priceTier.Price * qty;
+                    priceTier.Sold += qty;
+
+                    context.OrderItems.Add(orderItem);
+
+                    // Create tickets for admin orders (some used, some valid)
+                    for (int k = 0; k < qty; k++)
+                    {
+                        var isUsed = i == 0; // First order has used tickets
+                        var ticket = new Ticket
+                        {
+                            Id = Guid.NewGuid(),
+                            OrderItemId = orderItem.Id,
+                            TicketCode = Guid.NewGuid().ToString("N")[..32],
+                            QRNonce = Guid.NewGuid().ToString("N")[..32],
+                            Status = isUsed ? "Used" : "Valid",
+                            IssuedAt = order.CreatedAt,
+                            UsedAt = isUsed ? order.CreatedAt.AddDays(1) : null
+                        };
+                        context.Tickets.Add(ticket);
+                    }
+                }
+
+                orders.Add(order);
+            }
+
+            context.Orders.AddRange(orders);
+            await context.SaveChangesAsync();
+            return orders;
+        }
+
+        private static async Task<List<Review>> CreateReviewsAsync(
+            ApplicationDbContext context,
+            List<ApplicationUser> users,
+            List<Event> events,
+            ApplicationUser? adminUser,
+            ILogger<SeedDataService> logger)
+        {
+            var reviews = new List<Review>();
+            var publishedEvents = events.Where(e => e.Status == "Published").ToList();
+            var regularUsers = users.Where(u => u.Email != null && !u.Email.Contains("scanner") && !u.Email.Contains("organizer")).ToList();
+
+            // Review templates
+            var reviewTemplates = new[]
+            {
+                new { Rating = 5, Title = "Odlično!", Content = "Fantastičan događaj, sve je bilo na najvišem nivou. Preporučujem svima!" },
+                new { Rating = 5, Title = "Nezaboravno iskustvo", Content = "Organizacija na najvišem nivou, definitivno dolazim opet." },
+                new { Rating = 4, Title = "Vrlo dobro", Content = "Uglavnom sve u redu, nekoliko sitnih propusta ali generalno odlično." },
+                new { Rating = 5, Title = "Vrhunski!", Content = "Najbolji događaj na kojem sam bio/la ove godine. Bravo za organizatore!" },
+                new { Rating = 4, Title = "Preporučujem", Content = "Dobra atmosfera, kvalitetna organizacija. Vrijedilo je svake pare." },
+                new { Rating = 5, Title = "Savršeno!", Content = "Sve je bilo savršeno organizirano. Hvala organizatorima!" },
+                new { Rating = 3, Title = "Solidno", Content = "Događaj je bio OK, ali ima prostora za poboljšanje." },
+                new { Rating = 5, Title = "Spektakularno!", Content = "Prešli su sva očekivanja! Jedva čekam sljedeći put." },
+                new { Rating = 4, Title = "Dobra zabava", Content = "Proveli smo se odlično, atmosfera je bila super." },
+                new { Rating = 5, Title = "Top!", Content = "Sve pohvale za organizaciju i izvođače. 10/10!" }
+            };
+
+            // Create admin user review for Jazz Festival (index 1)
+            if (adminUser != null && publishedEvents.Count > 1)
+            {
+                var jazzFestival = publishedEvents.FirstOrDefault(e => e.Title.Contains("Jazz"));
+                if (jazzFestival != null)
+                {
+                    var adminReview = new Review
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = adminUser.Id,
+                        EventId = jazzFestival.Id,
+                        Rating = 5,
+                        Title = "Fantastičan festival!",
+                        Content = "Odlična atmosfera, vrhunski izvođači i savršena organizacija. Preporučujem svima!",
+                        CreatedAt = DateTime.UtcNow.AddDays(-5)
+                    };
+                    reviews.Add(adminReview);
+                }
+            }
+
+            // Create reviews from regular users (10-15 reviews)
+            var random = new Random(42); // Fixed seed for consistency
+            for (int i = 0; i < 12 && i < publishedEvents.Count && regularUsers.Count > 0; i++)
+            {
+                var eventEntity = publishedEvents[i % publishedEvents.Count];
+                var user = regularUsers[i % regularUsers.Count];
+                var template = reviewTemplates[i % reviewTemplates.Length];
+
+                // Skip if this user already reviewed this event
+                if (reviews.Any(r => r.UserId == user.Id && r.EventId == eventEntity.Id))
+                    continue;
+
+                var review = new Review
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    EventId = eventEntity.Id,
+                    Rating = template.Rating,
+                    Title = template.Title,
+                    Content = template.Content,
+                    CreatedAt = DateTime.UtcNow.AddDays(-(15 - i))
+                };
+                reviews.Add(review);
+            }
+
+            context.Reviews.AddRange(reviews);
+            await context.SaveChangesAsync();
+            return reviews;
+        }
+
+        private static async Task<List<UserFavorite>> CreateUserFavoritesAsync(
+            ApplicationDbContext context,
+            List<ApplicationUser> users,
+            List<Event> events,
+            ApplicationUser? adminUser,
+            ILogger<SeedDataService> logger)
+        {
+            var favorites = new List<UserFavorite>();
+            var publishedEvents = events.Where(e => e.Status == "Published").ToList();
+            var usedCombinations = new HashSet<(string UserId, Guid EventId)>();
+
+            // Admin user favorites (3-4 events)
+            if (adminUser != null)
+            {
+                for (int i = 0; i < 4 && i < publishedEvents.Count; i++)
+                {
+                    var combination = (adminUser.Id, publishedEvents[i].Id);
+                    if (!usedCombinations.Contains(combination))
+                    {
+                        var favorite = new UserFavorite
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = adminUser.Id,
+                            EventId = publishedEvents[i].Id,
+                            CreatedAt = DateTime.UtcNow.AddDays(-(10 - i))
+                        };
+                        favorites.Add(favorite);
+                        usedCombinations.Add(combination);
+                    }
+                }
+            }
+
+            // Other users favorites (distribute 15-20 favorites)
+            var regularUsers = users.Where(u => u.Email != null && u.Email.Contains("user")).ToList();
+            var random = new Random(123); // Fixed seed for consistency
+
+            for (int i = 0; i < 16 && regularUsers.Count > 0; i++)
+            {
+                var user = regularUsers[i % regularUsers.Count];
+                var eventEntity = publishedEvents[random.Next(publishedEvents.Count)];
+                var combination = (user.Id, eventEntity.Id);
+
+                if (!usedCombinations.Contains(combination))
+                {
+                    var favorite = new UserFavorite
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = user.Id,
+                        EventId = eventEntity.Id,
+                        CreatedAt = DateTime.UtcNow.AddDays(-(20 - i))
+                    };
+                    favorites.Add(favorite);
+                    usedCombinations.Add(combination);
+                }
+            }
+
+            context.UserFavorites.AddRange(favorites);
+            await context.SaveChangesAsync();
+            return favorites;
+        }
+
         private static async Task<List<PriceTier>> CreatePriceTiersAsync(
             ApplicationDbContext context,
             List<Event> events,
@@ -391,6 +894,7 @@ namespace Karta.WebAPI.Services
             await context.SaveChangesAsync();
             return priceTiers;
         }
+
         private static async Task<List<Order>> CreateOrdersAsync(
             ApplicationDbContext context,
             List<ApplicationUser> users,
@@ -421,6 +925,7 @@ namespace Karta.WebAPI.Services
             await context.SaveChangesAsync();
             return orders;
         }
+
         private static async Task<List<OrderItem>> CreateOrderItemsAsync(
             ApplicationDbContext context,
             List<Order> orders,
@@ -460,6 +965,7 @@ namespace Karta.WebAPI.Services
             await context.SaveChangesAsync();
             return orderItems;
         }
+
         private static async Task<List<Ticket>> CreateTicketsAsync(
             ApplicationDbContext context,
             List<OrderItem> orderItems,
@@ -509,6 +1015,7 @@ namespace Karta.WebAPI.Services
             await context.SaveChangesAsync();
             return tickets;
         }
+
         private static async Task<List<ScanLog>> CreateScanLogsAsync(
             ApplicationDbContext context,
             List<Ticket> tickets,
@@ -556,6 +1063,7 @@ namespace Karta.WebAPI.Services
             await context.SaveChangesAsync();
             return scanLogs;
         }
+
         private static async Task<List<EventScannerAssignment>> CreateEventScannerAssignmentsAsync(
             ApplicationDbContext context,
             List<Event> events,

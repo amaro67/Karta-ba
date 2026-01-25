@@ -10,6 +10,7 @@ import '../screens/user/my_events_screen.dart';
 import '../screens/user/user_profile_screen.dart';
 import '../screens/scanner/scanner_home_screen.dart';
 import '../screens/scanner/qr_scanner_screen.dart';
+import '../screens/user/write_review_screen.dart';
 class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
@@ -22,6 +23,7 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String scannerHome = '/scanner-home';
   static const String qrScanner = '/qr-scanner';
+  static const String writeReview = '/write-review';
   static Map<String, WidgetBuilder> routes = {
     login: (context) => const LoginScreen(),
     register: (context) => const RegisterScreen(),
@@ -34,5 +36,6 @@ class AppRoutes {
     profile: (context) => const UserProfileScreen(),
     scannerHome: (context) => const ScannerHomeScreen(),
     qrScanner: (context) => const QRScannerScreen(),
+    writeReview: (context) => const WriteReviewScreen(),
   };
 }

@@ -5,6 +5,7 @@ import '../model/auth/login_request.dart';
 import '../model/auth/register_request.dart';
 import '../model/auth/auth_response.dart';
 import '../model/auth/refresh_token_request.dart';
+import '../models/review_dto.dart';
 class ApiClient {
   static const String baseUrl = 'http://localhost:8080';
   static const String apiPrefix = '/api';
@@ -994,6 +995,44 @@ class ApiClient {
 
   static Future<List<dynamic>> getMyVenues(String token) async {
     return await getList('/Venue/my-venues', token: token);
+  }
+
+  // Reviews
+  static Future<EventReviewsDto> getEventReviews(String eventId, {int page = 1, int pageSize = 10}) async {
+    final data = await get('/Review/event/$eventId?page=$page&pageSize=$pageSize');
+    return EventReviewsDto.fromJson(data);
+  }
+
+  static Future<bool> canUserReviewEvent(String token, String eventId) async {
+    try {
+      final data = await get('/Review/event/$eventId/can-review', token: token);
+      return data['canReview'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<ReviewDto?> getUserReviewForEvent(String token, String eventId) async {
+    try {
+      final data = await get('/Review/event/$eventId/my-review', token: token);
+      return ReviewDto.fromJson(data);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<ReviewDto> createReview(String token, String eventId, CreateReviewRequest request) async {
+    final data = await post('/Review/event/$eventId', request.toJson(), token: token);
+    return ReviewDto.fromJson(data);
+  }
+
+  static Future<ReviewDto> updateReview(String token, String reviewId, UpdateReviewRequest request) async {
+    final data = await put('/Review/$reviewId', request.toJson(), token: token);
+    return ReviewDto.fromJson(data);
+  }
+
+  static Future<void> deleteReview(String token, String reviewId) async {
+    return await delete('/Review/$reviewId', token: token);
   }
 
   static void dispose() {

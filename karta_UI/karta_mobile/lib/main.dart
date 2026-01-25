@@ -7,6 +7,7 @@ import 'package:flutter_stripe/flutter_stripe.dart' as stripe;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
+import 'providers/reviews_provider.dart';
 const bool isDemoMode = false;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,6 +70,10 @@ class KartaMobileApp extends StatelessWidget {
             }
             return provider;
           },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, ReviewsProvider>(
+          create: (context) => ReviewsProvider(context.read<AuthProvider>()),
+          update: (context, auth, previous) => previous ?? ReviewsProvider(auth),
         ),
       ],
       child: Consumer<AuthProvider>(

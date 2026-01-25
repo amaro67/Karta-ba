@@ -4,6 +4,8 @@ import 'package:karta_shared/karta_shared.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../config/routes.dart';
+import '../../providers/reviews_provider.dart';
 class TicketDetailScreen extends StatefulWidget {
   const TicketDetailScreen({super.key});
   @override
@@ -16,6 +18,9 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   bool _isLoading = true;
   String? _error;
   bool _hasInitialized = false;
+  bool _canReview = false;
+  ReviewDto? _userReview;
+  bool _isLoadingReviewStatus = false;
   @override
   void initState() {
     super.initState();
@@ -59,6 +64,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         _orderItem = preloadedOrderItem;
         _isLoading = false;
       });
+      _loadReviewStatus(preloadedEvent.id);
       return;
     }
     setState(() {
@@ -110,6 +116,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           _orderItem = foundOrderItem;
           _isLoading = false;
         });
+        _loadReviewStatus(preloadedEvent.id);
         return;
       }
       final ordersResponse = await ApiClient.getMyOrders(token);
@@ -142,6 +149,9 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       setState(() {
         _isLoading = false;
       });
+      if (_event != null) {
+        _loadReviewStatus(_event!.id);
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -175,6 +185,71 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       return tier.name;
     } catch (e) {
       return null;
+    }
+  }
+
+  Future<void> _loadReviewStatus(String eventId) async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingReviewStatus = true;
+    });
+
+    final authProvider = context.read<AuthProvider>();
+    final token = authProvider.accessToken;
+
+    if (token == null) {
+      setState(() {
+        _canReview = false;
+        _isLoadingReviewStatus = false;
+      });
+      return;
+    }
+
+    try {
+      // Check if user can review
+      final canReview = await ApiClient.canUserReviewEvent(token, eventId);
+
+      // Load user's existing review if any
+      ReviewDto? userReview;
+      final reviewData = await ApiClient.getUserReviewForEvent(token, eventId);
+      if (reviewData != null) {
+        userReview = ReviewDto.fromJson(reviewData);
+      }
+
+      if (mounted) {
+        setState(() {
+          _canReview = canReview;
+          _userReview = userReview;
+          _isLoadingReviewStatus = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading review status: $e');
+      if (mounted) {
+        setState(() {
+          _canReview = false;
+          _isLoadingReviewStatus = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _navigateToWriteReview() async {
+    if (_event == null) return;
+
+    final result = await Navigator.of(context).pushNamed(
+      AppRoutes.writeReview,
+      arguments: {
+        'eventId': _event!.id,
+        'eventTitle': _event!.title,
+        'existingReview': _userReview,
+      },
+    );
+
+    // Reload review status if a review was submitted
+    if (result == true) {
+      _loadReviewStatus(_event!.id);
     }
   }
   @override
@@ -356,6 +431,33 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               child: const Text('Cancel ticket'),
+            ),
+            const SizedBox(height: 12),
+          ],
+          // Review button
+          if (_event != null && !_isLoadingReviewStatus) ...[
+            if (_canReview || _userReview != null)
+              ElevatedButton.icon(
+                onPressed: _navigateToWriteReview,
+                icon: Icon(_userReview != null ? Icons.edit : Icons.rate_review),
+                label: Text(_userReview != null ? 'Uredi recenziju' : 'Napiši recenziju'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+          ],
+          if (_isLoadingReviewStatus) ...[
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
             ),
           ],
           const SizedBox(height: 24),

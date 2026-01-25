@@ -21,6 +21,7 @@ namespace Karta.Model
         public DbSet<Category> Categories { get; set; }
         public DbSet<Venue> Venues { get; set; }
         public DbSet<UserFavorite> UserFavorites { get; set; }
+        public DbSet<Review> Reviews { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -348,6 +349,29 @@ namespace Karta.Model
                 .WithMany(v => v.Events)
                 .HasForeignKey(e => e.VenueId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<Review>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Rating).IsRequired();
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Content).IsRequired().HasMaxLength(1000);
+                entity.Property(e => e.CreatedAt).IsRequired();
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Event)
+                    .WithMany()
+                    .HasForeignKey(e => e.EventId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // One review per user per event
+                entity.HasIndex(e => new { e.UserId, e.EventId }).IsUnique();
+                entity.HasIndex(e => e.EventId);
+            });
         }
     }
 }

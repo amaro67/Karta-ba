@@ -7,16 +7,14 @@ part of 'user_info.dart';
 // **************************************************************************
 
 UserInfo _$UserInfoFromJson(Map<String, dynamic> json) => UserInfo(
-      id: json['id'] as String,
-      email: json['email'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
-      emailConfirmed: json['emailConfirmed'] as bool,
-      isOrganizerVerified: json['isOrganizerVerified'] is bool
-          ? json['isOrganizerVerified'] as bool
-          : (json['isOrganizerVerified']?.toString().toLowerCase() == 'true'),
-      roles: (json['roles'] as List<dynamic>).map((e) => e as String).toList(),
-    );
+  id: json['id'] as String,
+  email: json['email'] as String,
+  firstName: json['firstName'] as String,
+  lastName: json['lastName'] as String,
+  emailConfirmed: json['emailConfirmed'] as bool,
+  isOrganizerVerified: json['isOrganizerVerified'] as bool,
+  roles: (json['roles'] as List<dynamic>).map((e) => e as String).toList(),
+);
 
 Map<String, dynamic> _$UserInfoToJson(UserInfo instance) => <String, dynamic>{
   'id': instance.id,
@@ -24,6 +22,6 @@ Map<String, dynamic> _$UserInfoToJson(UserInfo instance) => <String, dynamic>{
   'firstName': instance.firstName,
   'lastName': instance.lastName,
   'emailConfirmed': instance.emailConfirmed,
-      'isOrganizerVerified': instance.isOrganizerVerified,
+  'isOrganizerVerified': instance.isOrganizerVerified,
   'roles': instance.roles,
 };

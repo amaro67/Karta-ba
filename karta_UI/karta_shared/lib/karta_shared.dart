@@ -9,6 +9,7 @@ export 'models/event/paged_result.dart';
 export 'models/category/category_dto.dart';
 export 'models/venue/venue_dto.dart';
 export 'models/order/order_dto.dart';
+export 'models/review_dto.dart';
 export 'models/order/order_item_dto.dart';
 export 'models/order/ticket_dto.dart';
 export 'services/api_service.dart';
