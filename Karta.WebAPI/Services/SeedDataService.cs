@@ -128,8 +128,9 @@ namespace Karta.WebAPI.Services
                 logger.LogInformation($"Kreirano {users.Count} korisnika.");
 
                 // 6. Dohvati kategorije i venue-e iz baze (za events kreiranje)
-                var allCategories = await context.Categories.ToListAsync();
-                var allVenues = await context.Venues.ToListAsync();
+                // IMPORTANT: Order by DisplayOrder/CreatedAt to ensure correct index mapping
+                var allCategories = await context.Categories.OrderBy(c => c.DisplayOrder).ToListAsync();
+                var allVenues = await context.Venues.OrderBy(v => v.CreatedAt).ToListAsync();
                 var organizers = users.Where(u => userManager.IsInRoleAsync(u, "Organizer").Result).ToList();
 
                 // 7. Kreiranje događaja (20 events linked to categories and venues)
@@ -281,6 +282,7 @@ namespace Karta.WebAPI.Services
             var defaultOrganizer = organizers.FirstOrDefault()?.Id ?? "";
             var venues = new List<Venue>
             {
+                // SARAJEVO (5 venues)
                 new Venue
                 {
                     Id = Guid.NewGuid(),
@@ -323,6 +325,34 @@ namespace Karta.WebAPI.Services
                 new Venue
                 {
                     Id = Guid.NewGuid(),
+                    Name = "Narodno Pozorište Sarajevo",
+                    Address = "Obala Kulina bana 9",
+                    City = "Sarajevo",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 600,
+                    Latitude = 43.8589,
+                    Longitude = 18.4214,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Olympic Hall Zetra",
+                    Address = "Alipašina bb",
+                    City = "Sarajevo",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 10000,
+                    Latitude = 43.8456,
+                    Longitude = 18.3987,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+
+                // BANJA LUKA (3 venues)
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
                     Name = "Arena Banja Luka",
                     Address = "Bulevar vojvode Petra Bojovića 1A",
                     City = "Banja Luka",
@@ -336,7 +366,35 @@ namespace Karta.WebAPI.Services
                 new Venue
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Centar za Kulturu",
+                    Name = "Banski Dvor",
+                    Address = "Trg srpskih vladara 2",
+                    City = "Banja Luka",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 800,
+                    Latitude = 44.7756,
+                    Longitude = 17.1870,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Gradski Stadion Banja Luka",
+                    Address = "Srpskih pilota bb",
+                    City = "Banja Luka",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 10000,
+                    Latitude = 44.7680,
+                    Longitude = 17.1920,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+
+                // MOSTAR (3 venues)
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Centar za Kulturu Mostar",
                     Address = "Trg hrvatskih velikana bb",
                     City = "Mostar",
                     Country = "Bosna i Hercegovina",
@@ -349,7 +407,35 @@ namespace Karta.WebAPI.Services
                 new Venue
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Dom Armije",
+                    Name = "Narodno Pozorište Mostar",
+                    Address = "Kneza Domagoja bb",
+                    City = "Mostar",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 500,
+                    Latitude = 43.3420,
+                    Longitude = 17.8090,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Pavarotti Music Centre",
+                    Address = "Maršala Tita 179",
+                    City = "Mostar",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 300,
+                    Latitude = 43.3370,
+                    Longitude = 17.8150,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+
+                // TUZLA (2 venues)
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Dom Armije Tuzla",
                     Address = "Trg Slobode 1",
                     City = "Tuzla",
                     Country = "Bosna i Hercegovina",
@@ -359,6 +445,21 @@ namespace Karta.WebAPI.Services
                     CreatedBy = defaultOrganizer,
                     CreatedAt = DateTime.UtcNow
                 },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Mejdan Tuzla",
+                    Address = "Mije Keroševića Guje bb",
+                    City = "Tuzla",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 4000,
+                    Latitude = 44.5350,
+                    Longitude = 18.6800,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+
+                // ZENICA (2 venues)
                 new Venue
                 {
                     Id = Guid.NewGuid(),
@@ -372,6 +473,94 @@ namespace Karta.WebAPI.Services
                     CreatedBy = defaultOrganizer,
                     CreatedAt = DateTime.UtcNow
                 },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Bosansko Narodno Pozorište Zenica",
+                    Address = "Maršala Tita 24",
+                    City = "Zenica",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 500,
+                    Latitude = 44.2030,
+                    Longitude = 17.9070,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+
+                // BIJELJINA (2 venues)
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Dom Kulture Bijeljina",
+                    Address = "Trg Kralja Petra I",
+                    City = "Bijeljina",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 600,
+                    Latitude = 44.7589,
+                    Longitude = 19.2144,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Gradski Stadion Bijeljina",
+                    Address = "Patrijarha Pavla bb",
+                    City = "Bijeljina",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 7000,
+                    Latitude = 44.7550,
+                    Longitude = 19.2100,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+
+                // BRČKO (1 venue)
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Centar za Kulturu Brčko",
+                    Address = "Bulevar mira bb",
+                    City = "Brčko",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 500,
+                    Latitude = 44.8726,
+                    Longitude = 18.8109,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+
+                // TREBINJE (1 venue)
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Dom Kulture Trebinje",
+                    Address = "Trg Slobode bb",
+                    City = "Trebinje",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 400,
+                    Latitude = 42.7117,
+                    Longitude = 18.3439,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+
+                // BIHAĆ (1 venue)
+                new Venue
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Dom Kulture Bihać",
+                    Address = "Ulica 5. korpusa bb",
+                    City = "Bihać",
+                    Country = "Bosna i Hercegovina",
+                    Capacity = 600,
+                    Latitude = 44.8169,
+                    Longitude = 15.8708,
+                    CreatedBy = defaultOrganizer,
+                    CreatedAt = DateTime.UtcNow
+                },
+
+                // NEUM (1 venue)
                 new Venue
                 {
                     Id = Guid.NewGuid(),

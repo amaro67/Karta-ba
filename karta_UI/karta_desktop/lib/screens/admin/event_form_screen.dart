@@ -6,6 +6,7 @@ import 'dart:io';
 import '../../providers/event_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/categories_provider.dart';
+import '../../providers/venues_provider.dart';
 import '../../model/event/event_dto.dart';
 import '../../utils/base_textfield.dart';
 import '../../utils/error_dialog.dart';
@@ -20,32 +21,14 @@ class _EventFormScreenState extends State<EventFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _venueController = TextEditingController();
   final _cityController = TextEditingController();
   final _countryController = TextEditingController();
-  final _categoryController = TextEditingController();
   final _tagsController = TextEditingController();
   final _coverImageUrlController = TextEditingController();
   final List<_TicketOptionController> _ticketOptions = [];
   final List<String> _supportedCurrencies = const ['BAM', 'EUR', 'USD'];
-  final List<String> _cities = const [
-    'Sarajevo',
-    'Banja Luka',
-    'Tuzla',
-    'Zenica',
-    'Mostar',
-    'Bijeljina',
-    'Brčko',
-    'Prijedor',
-    'Trebinje',
-    'Doboj',
-    'Bihać',
-    'Livno',
-    'Goražde',
-    'Visoko',
-  ];
-  String? _selectedCategory;
-  String? _selectedCity;
+  String? _selectedCategoryId;
+  String? _selectedVenueId;
   DateTime? _startsAt;
   DateTime? _endsAt;
   String _status = 'Draft';
@@ -66,18 +49,17 @@ class _EventFormScreenState extends State<EventFormScreen> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CategoriesProvider>().loadCategories();
+      context.read<VenuesProvider>().loadVenues();
     });
   }
   void _populateForm(EventDto event) {
     _titleController.text = event.title;
     _descriptionController.text = event.description ?? '';
-    _venueController.text = event.venue;
+    _selectedVenueId = event.venueId;
     _cityController.text = event.city;
-    _selectedCity = event.city;
     _countryController.text = 'Bosnia and Herzegovina';
-    _categoryController.text = event.category;
-    // Set selected category - will be validated against API categories in build
-    _selectedCategory = event.category;
+    // Set selected category by ID
+    _selectedCategoryId = event.categoryId;
     _tagsController.text = event.tags ?? '';
     _coverImageUrlController.text = event.coverImageUrl ?? '';
     _startsAt = event.startsAt;
@@ -105,10 +87,8 @@ class _EventFormScreenState extends State<EventFormScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _venueController.dispose();
     _cityController.dispose();
     _countryController.dispose();
-    _categoryController.dispose();
     _tagsController.dispose();
     _coverImageUrlController.dispose();
     for (final option in _ticketOptions) {
@@ -158,6 +138,22 @@ class _EventFormScreenState extends State<EventFormScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+    if (_selectedVenueId == null) {
+      ErrorDialog.show(
+        context,
+        title: 'Validation Error',
+        message: 'Please select a venue',
+      );
+      return;
+    }
+    if (_selectedCategoryId == null) {
+      ErrorDialog.show(
+        context,
+        title: 'Validation Error',
+        message: 'Please select a category',
+      );
+      return;
+    }
     if (_startsAt == null) {
       ErrorDialog.show(
         context,
@@ -184,12 +180,10 @@ class _EventFormScreenState extends State<EventFormScreen> {
       'description': _descriptionController.text.trim().isEmpty
           ? null
           : _descriptionController.text.trim(),
-      'venue': _venueController.text.trim(),
-      'city': _cityController.text.trim(),
-      'country': _countryController.text.trim(),
+      'venueId': _selectedVenueId,
       'startsAt': _startsAt!.toIso8601String(),
       'endsAt': _endsAt?.toIso8601String(),
-      'category': _selectedCategory ?? _categoryController.text.trim(),
+      'categoryId': _selectedCategoryId,
       'tags': _tagsController.text.trim().isEmpty
           ? null
           : _tagsController.text.trim(),
@@ -426,11 +420,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                               Expanded(
                                 child: Consumer<CategoriesProvider>(
                                   builder: (context, categoriesProvider, child) {
-                                    final categories = categoriesProvider.categoryNames;
-                                    // Validate selected category against available categories
-                                    final validatedCategory = categories.contains(_selectedCategory)
-                                        ? _selectedCategory
-                                        : null;
+                                    final categories = categoriesProvider.categories;
 
                                     return Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,7 +438,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                                           const LinearProgressIndicator()
                                         else
                                           DropdownButtonFormField<String>(
-                                            value: validatedCategory,
+                                            value: _selectedCategoryId,
                                             decoration: InputDecoration(
                                               hintText: 'Odaberi kategoriju',
                                               border: OutlineInputBorder(
@@ -461,8 +451,8 @@ class _EventFormScreenState extends State<EventFormScreen> {
                                             ),
                                             items: categories.map((category) {
                                               return DropdownMenuItem<String>(
-                                                value: category,
-                                                child: Text(category),
+                                                value: category.id,
+                                                child: Text(category.name),
                                               );
                                             }).toList(),
                                             validator: (value) {
@@ -473,8 +463,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                                             },
                                             onChanged: (value) {
                                               setState(() {
-                                                _selectedCategory = value;
-                                                _categoryController.text = value ?? '';
+                                                _selectedCategoryId = value;
                                               });
                                             },
                                           ),
@@ -501,125 +490,92 @@ class _EventFormScreenState extends State<EventFormScreen> {
                     _SectionCard(
                       title: 'Location',
                       icon: Icons.location_on_outlined,
-                      child: Column(
-                        children: [
-                          BaseTextField(
-                            key: const ValueKey('venue_field'),
-                            label: 'Venue *',
-                            hint: 'Enter venue name',
-                            controller: _venueController,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Venue is required';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
+                      child: Consumer<VenuesProvider>(
+                        builder: (context, venuesProvider, child) {
+                          final venues = venuesProvider.venues;
+
+                          return Column(
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'City *',
-                                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF212121),
-                                            fontSize: 13,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Autocomplete<String>(
-                                      initialValue: TextEditingValue(text: _cityController.text),
-                                      optionsBuilder: (TextEditingValue textEditingValue) {
-                                        if (textEditingValue.text.isEmpty) {
-                                          return _cities;
-                                        }
-                                        return _cities.where((city) {
-                                          return city.toLowerCase().contains(
-                                                textEditingValue.text.toLowerCase(),
-                                              );
-                                        });
-                                      },
-                                      onSelected: (String value) {
-                                        setState(() {
-                                          _selectedCity = value;
-                                          _cityController.text = value;
-                                        });
-                                      },
-                                      fieldViewBuilder: (
-                                        BuildContext context,
-                                        TextEditingController textEditingController,
-                                        FocusNode focusNode,
-                                        VoidCallback onFieldSubmitted,
-                                      ) {
-                                        // Initialize with current value
-                                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                                          if (textEditingController.text != _cityController.text) {
-                                            textEditingController.text = _cityController.text;
-                                          }
-                                        });
-                                        
-                                        // Sync changes back to _cityController
-                                        textEditingController.addListener(() {
-                                          if (textEditingController.text != _cityController.text) {
-                                            _cityController.text = textEditingController.text;
-                                            setState(() {
-                                              _selectedCity = textEditingController.text;
-                                            });
-                                          }
-                                        });
-                                        
-                                        return TextFormField(
-                                          key: const ValueKey('city_field'),
-                                          controller: textEditingController,
-                                          focusNode: focusNode,
-                                          decoration: InputDecoration(
-                                            hintText: 'Kucajte ili odaberite grad',
-                                            border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            contentPadding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 14,
-                                            ),
-                                          ),
-                                          validator: (value) {
-                                            if (value == null || value.trim().isEmpty) {
-                                              return 'City is required';
-                                            }
-                                            return null;
-                                          },
-                                          onFieldSubmitted: (String value) {
-                                            onFieldSubmitted();
-                                          },
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Venue *',
+                                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFF212121),
+                                          fontSize: 13,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  if (venuesProvider.isLoading)
+                                    const LinearProgressIndicator()
+                                  else
+                                    DropdownButtonFormField<String>(
+                                      value: _selectedVenueId,
+                                      isExpanded: true,
+                                      decoration: InputDecoration(
+                                        hintText: 'Odaberi venue',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 14,
+                                        ),
+                                      ),
+                                      items: venues.map((venue) {
+                                        return DropdownMenuItem<String>(
+                                          value: venue.id,
+                                          child: Text('${venue.name} (${venue.city})'),
                                         );
+                                      }).toList(),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Venue is required';
+                                        }
+                                        return null;
+                                      },
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedVenueId = value;
+                                          // Auto-fill city from selected venue
+                                          final venue = venuesProvider.getVenueById(value!);
+                                          if (venue != null) {
+                                            _cityController.text = venue.city;
+                                          }
+                                        });
                                       },
                                     ),
-                                  ],
-                                ),
+                                ],
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: BaseTextField(
-                                  key: const ValueKey('country_field'),
-                                  label: 'Country *',
-                                  hint: 'Bosnia and Herzegovina',
-                                  controller: _countryController,
-                                  enabled: false,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Country is required';
-                                    }
-                                    return null;
-                                  },
-                                ),
+                              const SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: BaseTextField(
+                                      key: const ValueKey('city_field'),
+                                      label: 'City',
+                                      hint: 'Auto-filled from venue',
+                                      controller: _cityController,
+                                      enabled: false,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: BaseTextField(
+                                      key: const ValueKey('country_field'),
+                                      label: 'Country',
+                                      hint: 'Bosnia and Herzegovina',
+                                      controller: _countryController,
+                                      enabled: false,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 20),

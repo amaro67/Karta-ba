@@ -12,8 +12,8 @@ public interface IEventService
         string? status, DateTimeOffset? from, DateTimeOffset? to, int page, int size, CancellationToken ct = default);
     Task<EventDto?> GetEventAsync(Guid id, CancellationToken ct = default);
     Task<EventDto> CreateEventAsync(CreateEventRequest req, string userId, CancellationToken ct = default);
-    Task<EventDto> UpdateEventAsync(Guid id, UpdateEventRequest req, string userId, CancellationToken ct = default);
-    Task<bool> DeleteEventAsync(Guid id, string userId, CancellationToken ct = default);
-    Task<bool> ArchiveEventAsync(Guid id, string userId, CancellationToken ct = default);
+    Task<EventDto> UpdateEventAsync(Guid id, UpdateEventRequest req, string userId, bool isAdmin, CancellationToken ct = default);
+    Task<bool> DeleteEventAsync(Guid id, string userId, bool isAdmin, CancellationToken ct = default);
+    Task<bool> ArchiveEventAsync(Guid id, string userId, bool isAdmin, CancellationToken ct = default);
     Task<IReadOnlyList<EventDto>> GetMyEventsAsync(string userId, CancellationToken ct = default);
 }

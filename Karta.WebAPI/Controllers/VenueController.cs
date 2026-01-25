@@ -1,8 +1,10 @@
+using Karta.Model;
 using Karta.Service.DTO;
 using Karta.Service.Interfaces;
 using Karta.WebAPI.Authorization;
 using Karta.WebAPI.Filters;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
@@ -14,11 +16,13 @@ namespace Karta.WebAPI.Controllers
     public class VenueController : ControllerBase
     {
         private readonly IVenueService _venueService;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<VenueController> _logger;
 
-        public VenueController(IVenueService venueService, ILogger<VenueController> logger)
+        public VenueController(IVenueService venueService, UserManager<ApplicationUser> userManager, ILogger<VenueController> logger)
         {
             _venueService = venueService;
+            _userManager = userManager;
             _logger = logger;
         }
 
@@ -111,9 +115,16 @@ namespace Karta.WebAPI.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return Unauthorized();
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var isAdmin = roles.Contains("Admin");
+
             try
             {
-                var venue = await _venueService.UpdateVenueAsync(id, request, userId);
+                var venue = await _venueService.UpdateVenueAsync(id, request, userId, isAdmin);
                 return Ok(venue);
             }
             catch (ArgumentException ex)
@@ -141,9 +152,16 @@ namespace Karta.WebAPI.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return Unauthorized();
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var isAdmin = roles.Contains("Admin");
+
             try
             {
-                var success = await _venueService.DeleteVenueAsync(id, userId);
+                var success = await _venueService.DeleteVenueAsync(id, userId, isAdmin);
                 if (!success)
                     return NotFound();
 

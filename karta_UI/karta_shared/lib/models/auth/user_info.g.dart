@@ -9,11 +9,12 @@ part of 'user_info.dart';
 UserInfo _$UserInfoFromJson(Map<String, dynamic> json) => UserInfo(
   id: json['id'] as String,
   email: json['email'] as String,
-  firstName: json['firstName'] as String,
-  lastName: json['lastName'] as String,
-  emailConfirmed: json['emailConfirmed'] as bool,
-  isOrganizerVerified: json['isOrganizerVerified'] as bool,
-  roles: (json['roles'] as List<dynamic>).map((e) => e as String).toList(),
+  firstName: json['firstName'] as String? ?? '',
+  lastName: json['lastName'] as String? ?? '',
+  emailConfirmed: json['emailConfirmed'] as bool? ?? false,
+  isOrganizerVerified: json['isOrganizerVerified'] as bool? ?? false,
+  roles:
+      (json['roles'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
 );
 
 Map<String, dynamic> _$UserInfoToJson(UserInfo instance) => <String, dynamic>{

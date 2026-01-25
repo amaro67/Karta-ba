@@ -36,7 +36,11 @@ namespace Karta.Service.Services
 
         private void QueueEmail(string email, string subject, string body, EmailType type)
         {
-            if (_rabbitMQService.IsConnected())
+            _logger.LogInformation("QueueEmail called for {Email}, Type: {Type}, checking RabbitMQ connection...", email, type);
+            var isConnected = _rabbitMQService.IsConnected();
+            _logger.LogInformation("RabbitMQ.IsConnected() returned: {IsConnected}", isConnected);
+
+            if (isConnected)
             {
                 var message = new EmailMessage(email, subject, body, type);
                 _rabbitMQService.PublishEmailMessage(message);

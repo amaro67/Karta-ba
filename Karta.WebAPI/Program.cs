@@ -129,6 +129,7 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 builder.Services.AddHostedService<Karta.WebAPI.Services.DatabaseInitializationService>();
+builder.Services.AddHostedService<Karta.WebAPI.Services.RabbitMQInitializationService>();
 builder.Services.AddHostedService<Karta.WebAPI.Services.OrderCleanupService>();
 builder.Services.AddHostedService<Karta.WebAPI.Services.EventArchiveService>();
 builder.Services.AddHostedService<Karta.WebAPI.Services.DailyResetService>();

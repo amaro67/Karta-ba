@@ -105,7 +105,7 @@ namespace Karta.Service.Services
             );
         }
 
-        public async Task<VenueDto> UpdateVenueAsync(Guid id, UpdateVenueRequest request, string userId, CancellationToken ct = default)
+        public async Task<VenueDto> UpdateVenueAsync(Guid id, UpdateVenueRequest request, string userId, bool isAdmin, CancellationToken ct = default)
         {
             var venue = await _context.Venues
                 .FirstOrDefaultAsync(v => v.Id == id, ct);
@@ -113,9 +113,9 @@ namespace Karta.Service.Services
             if (venue == null)
                 throw new ArgumentException("Venue not found");
 
-            // Check ownership (unless admin - not checking here, controller should handle)
-            if (venue.CreatedBy != userId)
-                throw new UnauthorizedAccessException("You can only update your own venues");
+            // Ownership check - only owner or admin can modify
+            if (venue.CreatedBy != userId && !isAdmin)
+                throw new UnauthorizedAccessException("Nemate pravo editovati ovaj venue.");
 
             if (!string.IsNullOrEmpty(request.Name))
                 venue.Name = request.Name;
@@ -158,7 +158,7 @@ namespace Karta.Service.Services
             );
         }
 
-        public async Task<bool> DeleteVenueAsync(Guid id, string userId, CancellationToken ct = default)
+        public async Task<bool> DeleteVenueAsync(Guid id, string userId, bool isAdmin, CancellationToken ct = default)
         {
             var venue = await _context.Venues
                 .Include(v => v.Events)
@@ -167,9 +167,9 @@ namespace Karta.Service.Services
             if (venue == null)
                 return false;
 
-            // Check ownership
-            if (venue.CreatedBy != userId)
-                throw new UnauthorizedAccessException("You can only delete your own venues");
+            // Ownership check - only owner or admin can delete
+            if (venue.CreatedBy != userId && !isAdmin)
+                throw new UnauthorizedAccessException("Nemate pravo brisati ovaj venue.");
 
             // Check if venue has events
             if (venue.Events.Any())

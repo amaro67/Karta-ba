@@ -97,8 +97,8 @@ namespace Karta.WebAPI.Controllers
         [ServiceFilter(typeof(ValidationFilterAttribute))]
         public async Task<ActionResult<EventDto>> CreateEvent([FromBody] CreateEventRequest request)
         {
-            _logger.LogInformation("CreateEvent called. Request: Title={Title}, Venue={Venue}, City={City}, StartsAt={StartsAt}, PriceTiersCount={PriceTiersCount}",
-                request?.Title, request?.Venue, request?.City, request?.StartsAt, request?.PriceTiers?.Count ?? 0);
+            _logger.LogInformation("CreateEvent called. Request: Title={Title}, VenueId={VenueId}, CategoryId={CategoryId}, StartsAt={StartsAt}, PriceTiersCount={PriceTiersCount}",
+                request?.Title, request?.VenueId, request?.CategoryId, request?.StartsAt, request?.PriceTiers?.Count ?? 0);
             
             if (!ModelState.IsValid)
             {
@@ -165,8 +165,12 @@ namespace Karta.WebAPI.Controllers
             }
             try
             {
-                var eventDto = await _eventService.UpdateEventAsync(id, request, userId);
+                var eventDto = await _eventService.UpdateEventAsync(id, request, userId, isAdmin);
                 return Ok(eventDto);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
             }
             catch (ArgumentException ex)
             {
@@ -180,10 +184,25 @@ namespace Karta.WebAPI.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
-            var success = await _eventService.DeleteEventAsync(id, userId);
-            if (!success)
-                return NotFound();
-            return NoContent();
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return Unauthorized();
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var isAdmin = roles.Contains("Admin");
+
+            try
+            {
+                var success = await _eventService.DeleteEventAsync(id, userId, isAdmin);
+                if (!success)
+                    return NotFound();
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
         }
         [HttpPost("{id}/archive")]
         [Authorize]
@@ -192,10 +211,25 @@ namespace Karta.WebAPI.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
-            var success = await _eventService.ArchiveEventAsync(id, userId);
-            if (!success)
-                return NotFound();
-            return NoContent();
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return Unauthorized();
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var isAdmin = roles.Contains("Admin");
+
+            try
+            {
+                var success = await _eventService.ArchiveEventAsync(id, userId, isAdmin);
+                if (!success)
+                    return NotFound();
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
         }
         [HttpGet("my-events")]
         [Authorize]
@@ -309,17 +343,22 @@ namespace Karta.WebAPI.Controllers
 
                         if (categoryEvents.Any())
                         {
-                            dailyView.EmailSentToday = true;
-                            dailyView.EmailSentAt = DateTime.UtcNow;
-                            await _context.SaveChangesAsync();
                             var userEmail = user.Email;
                             var userName = user.FirstName ?? userEmail.Split('@')[0];
                             var emailBody = GenerateCategoryRecommendationEmailBody(userName, categoryName, categoryEvents);
+
+                            // Send email first, only set flag if successful
                             await _emailService.SendCategoryRecommendationAsync(
                                 userEmail!,
                                 $"🎟️ {categoryName} Events You'll Love!",
                                 emailBody
                             );
+
+                            // Only set flag AFTER successful email queue
+                            dailyView.EmailSentToday = true;
+                            dailyView.EmailSentAt = DateTime.UtcNow;
+                            await _context.SaveChangesAsync();
+
                             _logger.LogInformation("Category recommendation email queued for {Email} - Category: {Category}, Events: {Count}",
                                 userEmail, categoryName, categoryEvents.Count);
                         }

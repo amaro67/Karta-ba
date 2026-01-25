@@ -226,34 +226,18 @@ namespace Karta.Service.Services
                 throw new ArgumentException("End date and time cannot be before start date and time.");
             }
 
-            // Resolve venue details
-            string venueName = req.Venue ?? "";
-            string city = req.City ?? "";
-            string country = req.Country ?? "Bosnia and Herzegovina";
-            Guid? venueId = req.VenueId;
-
-            if (venueId.HasValue)
+            // Resolve venue details (required)
+            var venue = await _context.Venues.FindAsync(new object[] { req.VenueId }, ct);
+            if (venue == null)
             {
-                var venue = await _context.Venues.FindAsync(new object[] { venueId.Value }, ct);
-                if (venue != null)
-                {
-                    venueName = venue.Name;
-                    city = venue.City;
-                    country = venue.Country;
-                }
+                throw new ArgumentException("Invalid venue ID. Please select a valid venue.");
             }
 
-            // Resolve category details
-            string categoryName = req.Category ?? "";
-            Guid? categoryId = req.CategoryId;
-
-            if (categoryId.HasValue)
+            // Resolve category details (required)
+            var category = await _context.Categories.FindAsync(new object[] { req.CategoryId }, ct);
+            if (category == null)
             {
-                var category = await _context.Categories.FindAsync(new object[] { categoryId.Value }, ct);
-                if (category != null)
-                {
-                    categoryName = category.Name;
-                }
+                throw new ArgumentException("Invalid category ID. Please select a valid category.");
             }
 
             var slug = GenerateSlug(req.Title);
@@ -263,14 +247,14 @@ namespace Karta.Service.Services
                 Title = req.Title,
                 Slug = slug,
                 Description = req.Description,
-                Venue = venueName,
-                City = city,
-                Country = country,
-                VenueId = venueId,
+                Venue = venue.Name,
+                City = venue.City,
+                Country = venue.Country,
+                VenueId = req.VenueId,
                 StartsAt = req.StartsAt,
                 EndsAt = req.EndsAt,
-                Category = categoryName,
-                CategoryId = categoryId,
+                Category = category.Name,
+                CategoryId = req.CategoryId,
                 Tags = req.Tags,
                 Status = "Draft",
                 CoverImageUrl = req.CoverImageUrl,
@@ -352,7 +336,7 @@ namespace Karta.Service.Services
                 )).ToList()
             );
         }
-        public async Task<EventDto> UpdateEventAsync(Guid id, UpdateEventRequest req, string userId, CancellationToken ct = default)
+        public async Task<EventDto> UpdateEventAsync(Guid id, UpdateEventRequest req, string userId, bool isAdmin, CancellationToken ct = default)
         {
             var eventEntity = await _context.Events
                 .Include(e => e.PriceTiers)
@@ -361,6 +345,10 @@ namespace Karta.Service.Services
                 .FirstOrDefaultAsync(e => e.Id == id, ct);
             if (eventEntity == null)
                 throw new ArgumentException("Event not found");
+
+            // Ownership check - only owner or admin can modify
+            if (eventEntity.CreatedBy != userId && !isAdmin)
+                throw new UnauthorizedAccessException("Nemate pravo editovati ovaj event.");
             if (!string.IsNullOrEmpty(req.Title))
             {
                 eventEntity.Title = req.Title;
@@ -381,16 +369,6 @@ namespace Karta.Service.Services
                     eventEntity.Country = venue.Country;
                 }
             }
-            else
-            {
-                // Fallback to string fields if no VenueId
-                if (!string.IsNullOrEmpty(req.Venue))
-                    eventEntity.Venue = req.Venue;
-                if (!string.IsNullOrEmpty(req.City))
-                    eventEntity.City = req.City;
-                if (!string.IsNullOrEmpty(req.Country))
-                    eventEntity.Country = req.Country;
-            }
 
             if (req.StartsAt.HasValue)
                 eventEntity.StartsAt = req.StartsAt.Value;
@@ -406,10 +384,6 @@ namespace Karta.Service.Services
                     eventEntity.CategoryId = req.CategoryId;
                     eventEntity.Category = category.Name;
                 }
-            }
-            else if (!string.IsNullOrEmpty(req.Category))
-            {
-                eventEntity.Category = req.Category;
             }
 
             if (req.Tags != null)
@@ -451,24 +425,34 @@ namespace Karta.Service.Services
                 )).ToList()
             );
         }
-        public async Task<bool> DeleteEventAsync(Guid id, string userId, CancellationToken ct = default)
+        public async Task<bool> DeleteEventAsync(Guid id, string userId, bool isAdmin, CancellationToken ct = default)
         {
             var eventEntity = await _context.Events
                 .Include(e => e.PriceTiers)
                 .FirstOrDefaultAsync(e => e.Id == id, ct);
             if (eventEntity == null)
                 return false;
+
+            // Ownership check - only owner or admin can delete
+            if (eventEntity.CreatedBy != userId && !isAdmin)
+                throw new UnauthorizedAccessException("Nemate pravo brisati ovaj event.");
+
             _context.PriceTiers.RemoveRange(eventEntity.PriceTiers);
             _context.Events.Remove(eventEntity);
             await _context.SaveChangesAsync(ct);
             return true;
         }
-        public async Task<bool> ArchiveEventAsync(Guid id, string userId, CancellationToken ct = default)
+        public async Task<bool> ArchiveEventAsync(Guid id, string userId, bool isAdmin, CancellationToken ct = default)
         {
             var eventEntity = await _context.Events
                 .FirstOrDefaultAsync(e => e.Id == id, ct);
             if (eventEntity == null)
                 return false;
+
+            // Ownership check - only owner or admin can archive
+            if (eventEntity.CreatedBy != userId && !isAdmin)
+                throw new UnauthorizedAccessException("Nemate pravo arhivirati ovaj event.");
+
             eventEntity.Status = "Archived";
             await _context.SaveChangesAsync(ct);
             return true;

@@ -4,14 +4,10 @@ namespace Karta.Service.DTO;
 public record CreateEventRequest(
     string Title,
     string? Description,
-    Guid? VenueId,
-    string? Venue,      // Fallback for custom venue name
-    string? City,       // Required if VenueId is null
-    string? Country,    // Required if VenueId is null
+    Guid VenueId,           // Required - must select from venues table
     DateTimeOffset StartsAt,
     DateTimeOffset? EndsAt,
-    Guid? CategoryId,
-    string? Category,   // Fallback for custom category name
+    Guid CategoryId,        // Required - must select from categories table
     string? Tags,
     string? CoverImageUrl,
     IReadOnlyList<CreatePriceTierRequest>? PriceTiers
@@ -21,13 +17,9 @@ public record UpdateEventRequest(
     string? Title,
     string? Description,
     Guid? VenueId,
-    string? Venue,
-    string? City,
-    string? Country,
     DateTimeOffset? StartsAt,
     DateTimeOffset? EndsAt,
     Guid? CategoryId,
-    string? Category,
     string? Tags,
     string? Status,
     string? CoverImageUrl

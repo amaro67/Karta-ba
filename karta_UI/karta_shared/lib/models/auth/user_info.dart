@@ -4,19 +4,24 @@ part 'user_info.g.dart';
 class UserInfo {
   final String id;
   final String email;
+  @JsonKey(defaultValue: '')
   final String firstName;
+  @JsonKey(defaultValue: '')
   final String lastName;
+  @JsonKey(defaultValue: false)
   final bool emailConfirmed;
+  @JsonKey(defaultValue: false)
   final bool isOrganizerVerified;
+  @JsonKey(defaultValue: <String>[])
   final List<String> roles;
   const UserInfo({
     required this.id,
     required this.email,
-    required this.firstName,
-    required this.lastName,
-    required this.emailConfirmed,
-    required this.isOrganizerVerified,
-    required this.roles,
+    this.firstName = '',
+    this.lastName = '',
+    this.emailConfirmed = false,
+    this.isOrganizerVerified = false,
+    this.roles = const [],
   });
   factory UserInfo.fromJson(Map<String, dynamic> json) =>
       _$UserInfoFromJson(json);
