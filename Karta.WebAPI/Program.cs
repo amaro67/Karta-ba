@@ -109,15 +109,8 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IScannerService, ScannerService>();
-var useRabbitMQ = builder.Configuration.GetValue<bool>("Email:UseRabbitMQ", false);
-if (useRabbitMQ)
-{
-    builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
-}
-else
-{
-    builder.Services.AddSingleton<IRabbitMQService>(provider => new NullRabbitMQService());
-}
+// Always use RabbitMQ for email queuing
+builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
 builder.Services.AddScoped<ValidationFilterAttribute>();
 builder.Services.AddRateLimiter(options =>
 {
@@ -136,10 +129,6 @@ builder.Services.AddHostedService<Karta.WebAPI.Services.OrderCleanupService>();
 builder.Services.AddHostedService<Karta.WebAPI.Services.EventArchiveService>();
 builder.Services.AddHostedService<Karta.WebAPI.Services.DailyResetService>();
 builder.Services.AddHostedService<Karta.Service.Services.PaymentMonitorService>();
-if (useRabbitMQ)
-{
-    builder.Services.AddHostedService<EmailConsumerService>();
-}
 builder.Services.AddAuthorization(options =>
 {
     var permissions = new[]

@@ -931,6 +931,35 @@ class ApiClient {
   static Future<Map<String, dynamic>> getTicket(String token, String ticketId) async {
     return await get('/Ticket/$ticketId', token: token);
   }
+  static Future<Map<String, dynamic>> cancelTicket(String token, String ticketId) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$baseUrl$apiPrefix/Ticket/$ticketId/cancel'),
+        headers: _getHeaders(token: token),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 404) {
+        throw Exception('Ticket not found or does not belong to you');
+      } else if (response.statusCode == 400) {
+        String errorMessage = 'Cannot cancel ticket';
+        try {
+          if (response.body.isNotEmpty) {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          }
+        } catch (_) {}
+        throw Exception(errorMessage);
+      } else {
+        throw Exception('Failed to cancel ticket');
+      }
+    } catch (e) {
+      if (e is SocketException) {
+        throw Exception('Unable to connect to server. Please check your connection.');
+      }
+      rethrow;
+    }
+  }
   static void dispose() {
     _client.close();
   }

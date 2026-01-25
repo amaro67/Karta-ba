@@ -283,23 +283,14 @@ namespace Karta.WebAPI.Controllers
                             var userEmail = user.Email;
                             var userName = user.FirstName ?? userEmail.Split('@')[0];
                             var category = eventItem.Category;
-                            _ = Task.Run(async () =>
-                            {
-                                try
-                                {
-                                    var emailBody = GenerateCategoryRecommendationEmailBody(userName, category, categoryEvents);
-                                    await _emailService.SendEmailDirectAsync(
-                                        userEmail, 
-                                        $"🎟️ {category} Events You'll Love!", 
-                                        emailBody
-                                    );
-                                    _logger.LogInformation($"✅ Email sent directly to {userEmail} - Category: {category}, Events: {categoryEvents.Count}");
-                                }
-                                catch (Exception ex)
-                                {
-                                    _logger.LogError(ex, $"Error sending category recommendation email for user {userId}");
-                                }
-                            });
+                            var emailBody = GenerateCategoryRecommendationEmailBody(userName, category, categoryEvents);
+                            await _emailService.SendCategoryRecommendationAsync(
+                                userEmail!,
+                                $"🎟️ {category} Events You'll Love!",
+                                emailBody
+                            );
+                            _logger.LogInformation("Category recommendation email queued for {Email} - Category: {Category}, Events: {Count}",
+                                userEmail, category, categoryEvents.Count);
                         }
                     }
                     return Ok(new

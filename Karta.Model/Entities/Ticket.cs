@@ -11,6 +11,7 @@ namespace Karta.Model.Entities
         public string Status { get; set; } = "Issued";
         public DateTime IssuedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UsedAt { get; set; }
+        public DateTime? CancelledAt { get; set; }
         public OrderItem OrderItem { get; set; } = null!;
         public ICollection<ScanLog> ScanLogs { get; set; } = new List<ScanLog>();
     }

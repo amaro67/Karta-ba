@@ -13,9 +13,11 @@ namespace Karta.Service.Services
     public class TicketService : ITicketService
     {
         private readonly ApplicationDbContext _context;
-        public TicketService(ApplicationDbContext context)
+        private readonly IEmailService _emailService;
+        public TicketService(ApplicationDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
         public async Task<IReadOnlyList<TicketDto>> GetMyTicketsAsync(string userId, CancellationToken ct = default)
         {
@@ -161,6 +163,74 @@ namespace Karta.Service.Services
                 ticket.UsedAt
             );
         }
+        public async Task<TicketDto?> CancelTicketAsync(Guid ticketId, string userId, CancellationToken ct = default)
+        {
+            var ticket = await _context.Tickets
+                .Include(t => t.OrderItem)
+                    .ThenInclude(oi => oi.Order)
+                .Include(t => t.OrderItem)
+                    .ThenInclude(oi => oi.PriceTier)
+                .Include(t => t.OrderItem)
+                    .ThenInclude(oi => oi.Event)
+                .FirstOrDefaultAsync(t => t.Id == ticketId && t.OrderItem.Order.UserId == userId, ct);
+
+            if (ticket == null)
+                return null;
+
+            if (ticket.Status != "Issued")
+                throw new InvalidOperationException($"Cannot cancel ticket with status '{ticket.Status}'. Only 'Issued' tickets can be cancelled.");
+
+            if (ticket.OrderItem.Order.Status != "Paid")
+                throw new InvalidOperationException("Cannot cancel ticket from unpaid order.");
+
+            // Check 24-hour time restriction
+            var eventStartsAt = ticket.OrderItem.Event.StartsAt;
+            var hoursUntilEvent = (eventStartsAt - DateTimeOffset.UtcNow).TotalHours;
+
+            if (hoursUntilEvent < 24)
+                throw new InvalidOperationException("Tickets can only be cancelled at least 24 hours before the event starts.");
+
+            ticket.Status = "Cancelled";
+            ticket.CancelledAt = DateTime.UtcNow;
+
+            // Restore availability by decrementing sold count on price tier
+            if (ticket.OrderItem.PriceTier != null && ticket.OrderItem.PriceTier.Sold > 0)
+            {
+                ticket.OrderItem.PriceTier.Sold--;
+            }
+
+            await _context.SaveChangesAsync(ct);
+
+            // Send cancellation confirmation email to user
+            var eventName = ticket.OrderItem.Event.Title;
+            var customer = await _context.Users.FindAsync(new object[] { ticket.OrderItem.Order.UserId }, ct);
+            var customerEmail = customer?.Email;
+            if (!string.IsNullOrEmpty(customerEmail))
+            {
+                await _emailService.SendTicketCancellationAsync(customerEmail, eventName, ticket.TicketCode, ct);
+            }
+
+            // Send notification email to organizer
+            var organizer = await _context.Users.FindAsync(new object[] { ticket.OrderItem.Event.CreatedBy }, ct);
+            if (organizer?.Email != null && !string.IsNullOrEmpty(customerEmail))
+            {
+                await _emailService.SendOrganizerCancellationNotificationAsync(
+                    organizer.Email,
+                    eventName,
+                    ticket.TicketCode,
+                    customerEmail,
+                    ct);
+            }
+
+            return new TicketDto(
+                ticket.Id,
+                ticket.TicketCode,
+                ticket.Status,
+                ticket.IssuedAt,
+                ticket.UsedAt
+            );
+        }
+
         private async Task LogScanAsync(Guid ticketId, string gateId, string result, CancellationToken ct)
         {
             var scanLog = new ScanLog

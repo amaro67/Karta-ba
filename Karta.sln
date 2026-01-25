@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Karta.PerformanceTests", "K
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Karta.LoadTests", "Karta.LoadTests\Karta.LoadTests.csproj", "{CD603F3D-ABB0-4420-9D0A-1A12DB824D31}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Karta.Worker", "Karta.Worker\Karta.Worker.csproj", "{B8E5A1C2-3F4D-4A5B-9C6E-7D8F9A0B1C2D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,5 +56,9 @@ Global
 		{CD603F3D-ABB0-4420-9D0A-1A12DB824D31}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CD603F3D-ABB0-4420-9D0A-1A12DB824D31}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CD603F3D-ABB0-4420-9D0A-1A12DB824D31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8E5A1C2-3F4D-4A5B-9C6E-7D8F9A0B1C2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8E5A1C2-3F4D-4A5B-9C6E-7D8F9A0B1C2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8E5A1C2-3F4D-4A5B-9C6E-7D8F9A0B1C2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8E5A1C2-3F4D-4A5B-9C6E-7D8F9A0B1C2D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

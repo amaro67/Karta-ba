@@ -153,6 +153,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       case 'used':
         return AppTheme.textSecondary;
       case 'refunded':
+      case 'cancelled':
         return AppTheme.error;
       default:
         return AppTheme.success;
@@ -380,25 +381,55 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   void _showCancelDialog(BuildContext context, TicketDto ticket) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cancel ticket?'),
-        content: const Text(
-          'Are you sure you want to cancel this ticket? This action cannot be undone.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Are you sure you want to cancel this ticket? This action cannot be undone.',
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.warning.withOpacity(0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: AppTheme.warning,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Cancellation policy: Tickets can only be cancelled at least 24 hours before the event starts.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.warning,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Keep ticket'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Ticket cancellation not yet implemented'),
-                  backgroundColor: AppTheme.warning,
-                ),
-              );
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await _cancelTicket(ticket);
             },
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.error,
@@ -408,5 +439,55 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _cancelTicket(TicketDto ticket) async {
+    final authProvider = context.read<AuthProvider>();
+    final token = authProvider.accessToken;
+
+    if (token == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Not authenticated'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      await ApiClient.cancelTicket(token, ticket.id);
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ticket cancelled successfully'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
   }
 }

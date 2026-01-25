@@ -48,13 +48,11 @@ services:
       - EMAIL_SMTP_PORT=587
       - EMAIL_SMTP_USERNAME=amar.omerovic0607@gmail.com
       - EMAIL_SMTP_PASSWORD=ylej bqxm fnol bghi
-      - EMAIL_USE_RABBITMQ=${EMAIL_USE_RABBITMQ:-false}
-      
       # RabbitMQ konfiguracija
-      - RABBITMQ_HOSTNAME=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__UserName=${RABBITMQ_USERNAME:-guest}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-guest}
       
       # Stripe konfiguracija (test keys)
       # WebhookSecret može biti prazan u development modu - PaymentMonitorService će obraditi plaćanja
@@ -127,7 +125,31 @@ services:
     networks:
       - karta-network
 
-
+  # Email Worker servis
+  karta-worker:
+    build:
+      context: .
+      dockerfile: Karta.Worker/Dockerfile
+    container_name: karta-email-worker
+    environment:
+      - RABBITMQ_HOSTNAME=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - EMAIL_FROM_EMAIL=amar.omerovic0607@gmail.com
+      - EMAIL_SMTP_HOST=smtp.gmail.com
+      - EMAIL_SMTP_PORT=587
+      - EMAIL_SMTP_USERNAME=amar.omerovic0607@gmail.com
+      - EMAIL_SMTP_PASSWORD=ylej bqxm fnol bghi
+      - EMAIL_ENABLE_SSL=true
+    volumes:
+      - ./logs/worker:/app/logs
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - karta-network
 
 # Volumes za persistenciju podataka
 volumes:

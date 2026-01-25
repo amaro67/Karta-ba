@@ -57,13 +57,11 @@ services:
       - EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT}
       - EMAIL_SMTP_USERNAME=${EMAIL_SMTP_USERNAME}
       - EMAIL_SMTP_PASSWORD=${EMAIL_SMTP_PASSWORD}
-      - EMAIL_USE_RABBITMQ=${EMAIL_USE_RABBITMQ:-false}
-      
       # RabbitMQ konfiguracija
-      - RABBITMQ_HOSTNAME=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__UserName=${RABBITMQ_USERNAME:-guest}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-guest}
       
       # Stripe konfiguracija - PROMENITE OVE VREDNOSTI!
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
@@ -146,6 +144,38 @@ services:
           memory: 512M
         reservations:
           memory: 256M
+
+  # Email Worker servis
+  karta-worker:
+    build:
+      context: .
+      dockerfile: Karta.Worker/Dockerfile
+    container_name: karta-email-worker-prod
+    environment:
+      - RABBITMQ_HOSTNAME=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - EMAIL_FROM_EMAIL=${EMAIL_FROM_EMAIL}
+      - EMAIL_SMTP_HOST=${EMAIL_SMTP_HOST}
+      - EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT}
+      - EMAIL_SMTP_USERNAME=${EMAIL_SMTP_USERNAME}
+      - EMAIL_SMTP_PASSWORD=${EMAIL_SMTP_PASSWORD}
+      - EMAIL_ENABLE_SSL=true
+    volumes:
+      - ./logs/worker:/app/logs
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - karta-network-prod
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
 
 # Volumes za persistenciju podataka
 volumes:

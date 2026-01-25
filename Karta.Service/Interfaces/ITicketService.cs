@@ -12,4 +12,5 @@ public interface ITicketService
     Task<TicketDto?> ValidateAsync(string ticketCode, CancellationToken ct = default);
     Task<PagedResult<TicketDto>> GetAllTicketsAsync(string? query, string? status, string? userId, Guid? eventId, DateTimeOffset? from, DateTimeOffset? to, int page, int size, CancellationToken ct = default);
     Task<TicketDto?> GetTicketByIdAsync(Guid id, CancellationToken ct = default);
+    Task<TicketDto?> CancelTicketAsync(Guid ticketId, string userId, CancellationToken ct = default);
 }

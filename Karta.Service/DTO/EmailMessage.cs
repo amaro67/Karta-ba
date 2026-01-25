@@ -7,7 +7,9 @@ namespace Karta.Service.DTO
         PasswordReset,
         TicketConfirmation,
         Welcome,
-        CategoryRecommendation
+        CategoryRecommendation,
+        TicketCancellation,
+        OrganizerCancellation
     }
     public record EmailMessage(
         string ToEmail,

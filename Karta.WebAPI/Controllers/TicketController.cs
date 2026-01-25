@@ -105,5 +105,30 @@ namespace Karta.WebAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPost("{id:guid}/cancel")]
+        [Authorize]
+        [ProducesResponseType(typeof(TicketDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<TicketDto>> CancelTicket(Guid id, CancellationToken ct = default)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                var ticket = await _ticketService.CancelTicketAsync(id, userId, ct);
+                if (ticket == null)
+                    return NotFound("Ticket not found or does not belong to you");
+                return Ok(ticket);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }
