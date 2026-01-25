@@ -177,8 +177,8 @@ namespace Karta.Service.Services
             if (ticket == null)
                 return null;
 
-            if (ticket.Status != "Issued")
-                throw new InvalidOperationException($"Cannot cancel ticket with status '{ticket.Status}'. Only 'Issued' tickets can be cancelled.");
+            if (ticket.Status != "Issued" && ticket.Status != "Valid")
+                throw new InvalidOperationException($"Cannot cancel ticket with status '{ticket.Status}'. Only 'Issued' or 'Valid' tickets can be cancelled.");
 
             if (ticket.OrderItem.Order.Status != "Paid")
                 throw new InvalidOperationException("Cannot cancel ticket from unpaid order.");

@@ -36,6 +36,7 @@ class TicketCard extends StatelessWidget {
         return AppTheme.success;
       case 'used':
         return AppTheme.textSecondary;
+      case 'cancelled':
       case 'refunded':
         return AppTheme.error;
       default:

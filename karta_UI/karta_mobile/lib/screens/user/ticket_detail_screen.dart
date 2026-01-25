@@ -12,6 +12,7 @@ class TicketDetailScreen extends StatefulWidget {
 class _TicketDetailScreenState extends State<TicketDetailScreen> {
   EventDto? _event;
   OrderItemDto? _orderItem;
+  TicketDto? _ticket;
   bool _isLoading = true;
   String? _error;
   bool _hasInitialized = false;
@@ -41,14 +42,19 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       });
       return;
     }
+    TicketDto? preloadedTicket;
     EventDto? preloadedEvent;
     OrderItemDto? preloadedOrderItem;
     if (args is Map<String, dynamic>) {
+      preloadedTicket = args['ticket'] as TicketDto?;
       preloadedEvent = args['event'] as EventDto?;
       preloadedOrderItem = args['orderItem'] as OrderItemDto?;
+    } else if (args is TicketDto) {
+      preloadedTicket = args;
     }
-    if (preloadedEvent != null && preloadedOrderItem != null) {
+    if (preloadedTicket != null && preloadedEvent != null && preloadedOrderItem != null) {
       setState(() {
+        _ticket = preloadedTicket;
         _event = preloadedEvent;
         _orderItem = preloadedOrderItem;
         _isLoading = false;
@@ -73,6 +79,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     } else {
       ticket = args as TicketDto;
     }
+    _ticket = ticket;
     try {
       final authProvider = context.read<AuthProvider>();
       final token = authProvider.accessToken;
@@ -172,11 +179,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   }
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments;
-    final ticket = args is Map<String, dynamic> 
-        ? args['ticket'] as TicketDto 
-        : args as TicketDto;
-    if (_isLoading) {
+    if (_isLoading || _ticket == null) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('karta.ba'),
@@ -196,6 +199,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         ),
       );
     }
+    final ticket = _ticket!;
     return Scaffold(
       appBar: AppBar(
         title: const Text('karta.ba'),
@@ -343,7 +347,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             ),
           ],
           const SizedBox(height: 32),
-          if (ticket.status.toLowerCase() == 'issued') ...[
+          if (ticket.status.toLowerCase() == 'issued' || ticket.status.toLowerCase() == 'valid') ...[
             OutlinedButton(
               onPressed: () {
                 _showCancelDialog(context, ticket);
@@ -466,17 +470,20 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     );
 
     try {
-      await ApiClient.cancelTicket(token, ticket.id);
+      final updatedTicketData = await ApiClient.cancelTicket(token, ticket.id);
+      final updatedTicket = TicketDto.fromJson(updatedTicketData);
 
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // Close loading dialog
+        setState(() {
+          _ticket = updatedTicket;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Ticket cancelled successfully'),
             backgroundColor: AppTheme.success,
           ),
         );
-        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {

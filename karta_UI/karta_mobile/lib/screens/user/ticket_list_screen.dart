@@ -23,7 +23,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
     {'label': 'All', 'value': null, 'icon': Icons.all_inclusive, 'color': AppTheme.primaryColor},
     {'label': 'Valid', 'value': 'valid', 'icon': Icons.check_circle_outline, 'color': AppTheme.success},
     {'label': 'Used', 'value': 'used', 'icon': Icons.check_circle, 'color': AppTheme.textSecondary},
-    {'label': 'Refunded', 'value': 'refunded', 'icon': Icons.money_off, 'color': AppTheme.warning},
+    {'label': 'Cancelled', 'value': 'cancelled', 'icon': Icons.cancel_outlined, 'color': AppTheme.error},
   ];
   @override
   void initState() {
