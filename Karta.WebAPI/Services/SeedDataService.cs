@@ -90,45 +90,65 @@ namespace Karta.WebAPI.Services
                 var testUsers = await CreateTestUsersAsync(userManager, roleManager, logger);
                 logger.LogInformation($"Kreirano {testUsers.Count} testnih korisnika.");
 
+                // 2. Kreiranje kategorija (uvijek, jer su foundational data)
+                if (!await context.Categories.AnyAsync())
+                {
+                    logger.LogInformation("Kreiranje kategorija...");
+                    var categories = await CreateCategoriesAsync(context, logger);
+                    logger.LogInformation($"Kreirano {categories.Count} kategorija.");
+                }
+                else
+                {
+                    logger.LogInformation("Kategorije već postoje, preskačem kreiranje.");
+                }
+
+                // 3. Kreiranje venue-a (uvijek, jer su foundational data)
+                if (!await context.Venues.AnyAsync())
+                {
+                    logger.LogInformation("Kreiranje venue-a...");
+                    var testOrganizers = testUsers.Where(u => userManager.IsInRoleAsync(u, "Organizer").Result).ToList();
+                    var venues = await CreateVenuesAsync(context, testOrganizers, logger);
+                    logger.LogInformation($"Kreirano {venues.Count} venue-a.");
+                }
+                else
+                {
+                    logger.LogInformation("Venue-i već postoje, preskačem kreiranje.");
+                }
+
+                // 4. Provjera da li postoje eventi - ako da, preskoči ostalo
                 if (await context.Events.AnyAsync())
                 {
-                    logger.LogWarning("Baza već sadrži podatke. Preskačem seed-ovanje ostalih podataka.");
+                    logger.LogWarning("Baza već sadrži evente. Preskačem seed-ovanje ostalih podataka.");
                     return;
                 }
 
-                // 2. Kreiranje production korisnika
+                // 5. Kreiranje production korisnika
                 logger.LogInformation("Kreiranje korisnika...");
                 var users = await CreateUsersAsync(userManager, roleManager, logger);
                 logger.LogInformation($"Kreirano {users.Count} korisnika.");
 
-                // 3. Kreiranje kategorija
-                logger.LogInformation("Kreiranje kategorija...");
-                var categories = await CreateCategoriesAsync(context, logger);
-                logger.LogInformation($"Kreirano {categories.Count} kategorija.");
-
-                // 4. Kreiranje venue-a
-                logger.LogInformation("Kreiranje venue-a...");
+                // 6. Dohvati kategorije i venue-e iz baze (za events kreiranje)
+                var allCategories = await context.Categories.ToListAsync();
+                var allVenues = await context.Venues.ToListAsync();
                 var organizers = users.Where(u => userManager.IsInRoleAsync(u, "Organizer").Result).ToList();
-                var venues = await CreateVenuesAsync(context, organizers, logger);
-                logger.LogInformation($"Kreirano {venues.Count} venue-a.");
 
-                // 5. Kreiranje događaja (20 events linked to categories and venues)
+                // 7. Kreiranje događaja (20 events linked to categories and venues)
                 logger.LogInformation("Kreiranje događaja...");
-                var events = await CreateEventsAsync(context, organizers, categories, venues, logger);
+                var events = await CreateEventsAsync(context, organizers, allCategories, allVenues, logger);
                 logger.LogInformation($"Kreirano {events.Count} događaja.");
 
-                // 6. Kreiranje PriceTier-ova
+                // 8. Kreiranje PriceTier-ova
                 logger.LogInformation("Kreiranje PriceTier-ova...");
                 var priceTiers = await CreatePriceTiersAsync(context, events, logger);
                 logger.LogInformation($"Kreirano {priceTiers.Count} PriceTier-ova.");
 
-                // 7. Kreiranje narudžbi
+                // 9. Kreiranje narudžbi
                 logger.LogInformation("Kreiranje narudžbi...");
                 var regularUsers = users.Where(u => userManager.IsInRoleAsync(u, "User").Result).ToList();
                 var orders = await CreateOrdersAsync(context, regularUsers, events, priceTiers, logger);
                 logger.LogInformation($"Kreirano {orders.Count} narudžbi.");
 
-                // 8. Kreiranje admin user narudžbi
+                // 10. Kreiranje admin user narudžbi
                 logger.LogInformation("Kreiranje admin user narudžbi...");
                 var adminUser = await userManager.FindByEmailAsync("amar.omerovic0607@gmail.com");
                 var adminOrders = await CreateAdminUserOrdersAsync(context, adminUser, events, priceTiers, logger);
@@ -137,34 +157,34 @@ namespace Karta.WebAPI.Services
                 // Combine all orders for order items creation
                 var allOrders = orders.Concat(adminOrders).ToList();
 
-                // 9. Kreiranje OrderItem-ova
+                // 11. Kreiranje OrderItem-ova
                 logger.LogInformation("Kreiranje OrderItem-ova...");
                 var orderItems = await CreateOrderItemsAsync(context, orders, events, priceTiers, logger);
                 logger.LogInformation($"Kreirano {orderItems.Count} OrderItem-ova.");
 
-                // 10. Kreiranje Ticket-ova
+                // 12. Kreiranje Ticket-ova
                 logger.LogInformation("Kreiranje Ticket-ova...");
                 var tickets = await CreateTicketsAsync(context, orderItems, logger);
                 logger.LogInformation($"Kreirano {tickets.Count} Ticket-ova.");
 
-                // 11. Kreiranje Reviews
+                // 13. Kreiranje Reviews
                 logger.LogInformation("Kreiranje recenzija...");
                 var allUsers = users.Concat(testUsers).ToList();
                 if (adminUser != null) allUsers.Add(adminUser);
                 var reviews = await CreateReviewsAsync(context, allUsers, events, adminUser, logger);
                 logger.LogInformation($"Kreirano {reviews.Count} recenzija.");
 
-                // 12. Kreiranje UserFavorites
+                // 14. Kreiranje UserFavorites
                 logger.LogInformation("Kreiranje favorita...");
                 var favorites = await CreateUserFavoritesAsync(context, allUsers, events, adminUser, logger);
                 logger.LogInformation($"Kreirano {favorites.Count} favorita.");
 
-                // 13. Kreiranje ScanLog-ova
+                // 15. Kreiranje ScanLog-ova
                 logger.LogInformation("Kreiranje ScanLog-ova...");
                 var scanLogs = await CreateScanLogsAsync(context, tickets, orderItems, logger);
                 logger.LogInformation($"Kreirano {scanLogs.Count} ScanLog-ova.");
 
-                // 14. Kreiranje EventScannerAssignment-ova
+                // 16. Kreiranje EventScannerAssignment-ova
                 logger.LogInformation("Kreiranje EventScannerAssignment-ova...");
                 var scanners = users.Where(u => userManager.IsInRoleAsync(u, "Scanner").Result).ToList();
                 var assignments = await CreateEventScannerAssignmentsAsync(context, events, scanners, logger);
