@@ -18,6 +18,9 @@ namespace Karta.Model
         public DbSet<EventScannerAssignment> EventScannerAssignments { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<UserDailyEventView> UserDailyEventViews { get; set; }
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<Venue> Venues { get; set; }
+        public DbSet<UserFavorite> UserFavorites { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -229,8 +232,8 @@ namespace Karta.Model
                 entity.Property(e => e.UserId)
                     .IsRequired()
                     .HasMaxLength(450);
+                entity.Property(e => e.CategoryId);
                 entity.Property(e => e.Category)
-                    .IsRequired()
                     .HasMaxLength(100);
                 entity.Property(e => e.ViewCount)
                     .IsRequired();
@@ -244,11 +247,107 @@ namespace Karta.Model
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.CategoryRef)
+                    .WithMany()
+                    .HasForeignKey(e => e.CategoryId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                // Unique constraint: user can only have one view record per category per day
+                entity.HasIndex(e => new { e.UserId, e.CategoryId, e.Date })
+                    .IsUnique()
+                    .HasFilter("[CategoryId] IS NOT NULL");
                 entity.HasIndex(e => new { e.UserId, e.Category, e.Date })
-                    .IsUnique();
+                    .HasFilter("[CategoryId] IS NULL");
                 entity.HasIndex(e => e.Date);
-                entity.HasIndex(e => e.Category);
+                entity.HasIndex(e => e.CategoryId);
             });
+
+            builder.Entity<Category>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(100);
+                entity.Property(e => e.Slug)
+                    .IsRequired()
+                    .HasMaxLength(100);
+                entity.Property(e => e.Description)
+                    .HasMaxLength(500);
+                entity.Property(e => e.IconUrl)
+                    .HasMaxLength(500);
+                entity.Property(e => e.DisplayOrder)
+                    .IsRequired();
+                entity.Property(e => e.IsActive)
+                    .IsRequired()
+                    .HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired();
+                entity.HasIndex(e => e.Slug).IsUnique();
+                entity.HasIndex(e => e.DisplayOrder);
+                entity.HasIndex(e => e.IsActive);
+            });
+
+            builder.Entity<Venue>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(200);
+                entity.Property(e => e.Address)
+                    .IsRequired()
+                    .HasMaxLength(300);
+                entity.Property(e => e.City)
+                    .IsRequired()
+                    .HasMaxLength(100);
+                entity.Property(e => e.Country)
+                    .IsRequired()
+                    .HasMaxLength(100);
+                entity.Property(e => e.Capacity);
+                entity.Property(e => e.Latitude);
+                entity.Property(e => e.Longitude);
+                entity.Property(e => e.CreatedBy)
+                    .IsRequired()
+                    .HasMaxLength(450);
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired();
+                entity.HasIndex(e => e.Name);
+                entity.HasIndex(e => e.City);
+                entity.HasIndex(e => new { e.City, e.Country });
+            });
+
+            builder.Entity<UserFavorite>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UserId)
+                    .IsRequired()
+                    .HasMaxLength(450);
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired();
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Event)
+                    .WithMany(e => e.UserFavorites)
+                    .HasForeignKey(e => e.EventId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.UserId, e.EventId }).IsUnique();
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.EventId);
+            });
+
+            // Configure Event -> Category relationship
+            builder.Entity<Event>()
+                .HasOne(e => e.CategoryRef)
+                .WithMany(c => c.Events)
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure Event -> Venue relationship
+            builder.Entity<Event>()
+                .HasOne(e => e.VenueRef)
+                .WithMany(v => v.Events)
+                .HasForeignKey(e => e.VenueId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

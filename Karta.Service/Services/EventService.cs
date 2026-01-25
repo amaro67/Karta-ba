@@ -22,14 +22,24 @@ namespace Karta.Service.Services
         {
             var eventsQuery = _context.Events
                 .Include(e => e.PriceTiers)
+                .Include(e => e.CategoryRef)
+                .Include(e => e.VenueRef)
                 .AsQueryable();
+            // Support both categoryId (Guid) and category name (string)
             if (!string.IsNullOrEmpty(category))
             {
-                eventsQuery = eventsQuery.Where(e => e.Category == category);
+                if (Guid.TryParse(category, out var categoryId))
+                {
+                    eventsQuery = eventsQuery.Where(e => e.CategoryId == categoryId);
+                }
+                else
+                {
+                    eventsQuery = eventsQuery.Where(e => e.Category == category || (e.CategoryRef != null && e.CategoryRef.Name == category));
+                }
             }
             if (!string.IsNullOrEmpty(city))
             {
-                eventsQuery = eventsQuery.Where(e => e.City == city);
+                eventsQuery = eventsQuery.Where(e => e.City == city || (e.VenueRef != null && e.VenueRef.City == city));
             }
             if (from.HasValue)
             {
@@ -42,10 +52,11 @@ namespace Karta.Service.Services
             eventsQuery = eventsQuery.Where(e => e.Status != "Archived");
             if (!string.IsNullOrEmpty(query))
             {
-                eventsQuery = eventsQuery.Where(e => 
-                    EF.Functions.Like(e.Title, $"%{query}%") || 
+                eventsQuery = eventsQuery.Where(e =>
+                    EF.Functions.Like(e.Title, $"%{query}%") ||
                     (e.Description != null && EF.Functions.Like(e.Description, $"%{query}%")) ||
-                    EF.Functions.Like(e.Venue, $"%{query}%"));
+                    EF.Functions.Like(e.Venue, $"%{query}%") ||
+                    (e.VenueRef != null && EF.Functions.Like(e.VenueRef.Name, $"%{query}%")));
             }
             var total = await eventsQuery.CountAsync(ct);
             var sortedEvents = await eventsQuery
@@ -57,12 +68,14 @@ namespace Karta.Service.Services
                     e.Title,
                     e.Slug,
                     e.Description,
-                    e.Venue,
-                    e.City,
-                    e.Country,
+                    e.VenueId,
+                    e.VenueRef != null ? e.VenueRef.Name : e.Venue,
+                    e.VenueRef != null ? e.VenueRef.City : e.City,
+                    e.VenueRef != null ? e.VenueRef.Country : e.Country,
                     e.StartsAt,
                     e.EndsAt,
-                    e.Category,
+                    e.CategoryId,
+                    e.CategoryRef != null ? e.CategoryRef.Name : e.Category,
                     e.Tags,
                     e.Status,
                     e.CoverImageUrl,
@@ -90,21 +103,32 @@ namespace Karta.Service.Services
         {
             var eventsQuery = _context.Events
                 .Include(e => e.PriceTiers)
+                .Include(e => e.CategoryRef)
+                .Include(e => e.VenueRef)
                 .AsQueryable();
             if (!string.IsNullOrEmpty(query))
             {
-                eventsQuery = eventsQuery.Where(e => 
-                    EF.Functions.Like(e.Title, $"%{query}%") || 
+                eventsQuery = eventsQuery.Where(e =>
+                    EF.Functions.Like(e.Title, $"%{query}%") ||
                     (e.Description != null && EF.Functions.Like(e.Description, $"%{query}%")) ||
-                    EF.Functions.Like(e.Venue, $"%{query}%"));
+                    EF.Functions.Like(e.Venue, $"%{query}%") ||
+                    (e.VenueRef != null && EF.Functions.Like(e.VenueRef.Name, $"%{query}%")));
             }
+            // Support both categoryId (Guid) and category name (string)
             if (!string.IsNullOrEmpty(category))
             {
-                eventsQuery = eventsQuery.Where(e => e.Category == category);
+                if (Guid.TryParse(category, out var categoryId))
+                {
+                    eventsQuery = eventsQuery.Where(e => e.CategoryId == categoryId);
+                }
+                else
+                {
+                    eventsQuery = eventsQuery.Where(e => e.Category == category || (e.CategoryRef != null && e.CategoryRef.Name == category));
+                }
             }
             if (!string.IsNullOrEmpty(city))
             {
-                eventsQuery = eventsQuery.Where(e => e.City == city);
+                eventsQuery = eventsQuery.Where(e => e.City == city || (e.VenueRef != null && e.VenueRef.City == city));
             }
             if (!string.IsNullOrEmpty(status))
             {
@@ -128,12 +152,14 @@ namespace Karta.Service.Services
                     e.Title,
                     e.Slug,
                     e.Description,
-                    e.Venue,
-                    e.City,
-                    e.Country,
+                    e.VenueId,
+                    e.VenueRef != null ? e.VenueRef.Name : e.Venue,
+                    e.VenueRef != null ? e.VenueRef.City : e.City,
+                    e.VenueRef != null ? e.VenueRef.Country : e.Country,
                     e.StartsAt,
                     e.EndsAt,
-                    e.Category,
+                    e.CategoryId,
+                    e.CategoryRef != null ? e.CategoryRef.Name : e.Category,
                     e.Tags,
                     e.Status,
                     e.CoverImageUrl,
@@ -160,6 +186,8 @@ namespace Karta.Service.Services
         {
             var eventEntity = await _context.Events
                 .Include(e => e.PriceTiers)
+                .Include(e => e.CategoryRef)
+                .Include(e => e.VenueRef)
                 .FirstOrDefaultAsync(e => e.Id == id, ct);
             if (eventEntity == null)
                 return null;
@@ -168,12 +196,14 @@ namespace Karta.Service.Services
                 eventEntity.Title,
                 eventEntity.Slug,
                 eventEntity.Description,
-                eventEntity.Venue,
-                eventEntity.City,
-                eventEntity.Country,
+                eventEntity.VenueId,
+                eventEntity.VenueRef?.Name ?? eventEntity.Venue,
+                eventEntity.VenueRef?.City ?? eventEntity.City,
+                eventEntity.VenueRef?.Country ?? eventEntity.Country,
                 eventEntity.StartsAt,
                 eventEntity.EndsAt,
-                eventEntity.Category,
+                eventEntity.CategoryId,
+                eventEntity.CategoryRef?.Name ?? eventEntity.Category,
                 eventEntity.Tags,
                 eventEntity.Status,
                 eventEntity.CoverImageUrl,
@@ -195,7 +225,37 @@ namespace Karta.Service.Services
             {
                 throw new ArgumentException("End date and time cannot be before start date and time.");
             }
-            
+
+            // Resolve venue details
+            string venueName = req.Venue ?? "";
+            string city = req.City ?? "";
+            string country = req.Country ?? "Bosnia and Herzegovina";
+            Guid? venueId = req.VenueId;
+
+            if (venueId.HasValue)
+            {
+                var venue = await _context.Venues.FindAsync(new object[] { venueId.Value }, ct);
+                if (venue != null)
+                {
+                    venueName = venue.Name;
+                    city = venue.City;
+                    country = venue.Country;
+                }
+            }
+
+            // Resolve category details
+            string categoryName = req.Category ?? "";
+            Guid? categoryId = req.CategoryId;
+
+            if (categoryId.HasValue)
+            {
+                var category = await _context.Categories.FindAsync(new object[] { categoryId.Value }, ct);
+                if (category != null)
+                {
+                    categoryName = category.Name;
+                }
+            }
+
             var slug = GenerateSlug(req.Title);
             var eventEntity = new Event
             {
@@ -203,12 +263,14 @@ namespace Karta.Service.Services
                 Title = req.Title,
                 Slug = slug,
                 Description = req.Description,
-                Venue = req.Venue,
-                City = req.City,
-                Country = req.Country,
+                Venue = venueName,
+                City = city,
+                Country = country,
+                VenueId = venueId,
                 StartsAt = req.StartsAt,
                 EndsAt = req.EndsAt,
-                Category = req.Category,
+                Category = categoryName,
+                CategoryId = categoryId,
                 Tags = req.Tags,
                 Status = "Draft",
                 CoverImageUrl = req.CoverImageUrl,
@@ -260,18 +322,22 @@ namespace Karta.Service.Services
             }
             var createdEvent = await _context.Events
                 .Include(e => e.PriceTiers)
+                .Include(e => e.CategoryRef)
+                .Include(e => e.VenueRef)
                 .FirstOrDefaultAsync(e => e.Id == eventEntity.Id, ct);
             return new EventDto(
                 createdEvent!.Id,
                 createdEvent.Title,
                 createdEvent.Slug,
                 createdEvent.Description,
-                createdEvent.Venue,
-                createdEvent.City,
-                createdEvent.Country,
+                createdEvent.VenueId,
+                createdEvent.VenueRef?.Name ?? createdEvent.Venue,
+                createdEvent.VenueRef?.City ?? createdEvent.City,
+                createdEvent.VenueRef?.Country ?? createdEvent.Country,
                 createdEvent.StartsAt,
                 createdEvent.EndsAt,
-                createdEvent.Category,
+                createdEvent.CategoryId,
+                createdEvent.CategoryRef?.Name ?? createdEvent.Category,
                 createdEvent.Tags,
                 createdEvent.Status,
                 createdEvent.CoverImageUrl,
@@ -290,6 +356,8 @@ namespace Karta.Service.Services
         {
             var eventEntity = await _context.Events
                 .Include(e => e.PriceTiers)
+                .Include(e => e.CategoryRef)
+                .Include(e => e.VenueRef)
                 .FirstOrDefaultAsync(e => e.Id == id, ct);
             if (eventEntity == null)
                 throw new ArgumentException("Event not found");
@@ -300,18 +368,50 @@ namespace Karta.Service.Services
             }
             if (req.Description != null)
                 eventEntity.Description = req.Description;
-            if (!string.IsNullOrEmpty(req.Venue))
-                eventEntity.Venue = req.Venue;
-            if (!string.IsNullOrEmpty(req.City))
-                eventEntity.City = req.City;
-            if (!string.IsNullOrEmpty(req.Country))
-                eventEntity.Country = req.Country;
+
+            // Handle VenueId update
+            if (req.VenueId.HasValue)
+            {
+                var venue = await _context.Venues.FindAsync(new object[] { req.VenueId.Value }, ct);
+                if (venue != null)
+                {
+                    eventEntity.VenueId = req.VenueId;
+                    eventEntity.Venue = venue.Name;
+                    eventEntity.City = venue.City;
+                    eventEntity.Country = venue.Country;
+                }
+            }
+            else
+            {
+                // Fallback to string fields if no VenueId
+                if (!string.IsNullOrEmpty(req.Venue))
+                    eventEntity.Venue = req.Venue;
+                if (!string.IsNullOrEmpty(req.City))
+                    eventEntity.City = req.City;
+                if (!string.IsNullOrEmpty(req.Country))
+                    eventEntity.Country = req.Country;
+            }
+
             if (req.StartsAt.HasValue)
                 eventEntity.StartsAt = req.StartsAt.Value;
             if (req.EndsAt.HasValue)
                 eventEntity.EndsAt = req.EndsAt;
-            if (!string.IsNullOrEmpty(req.Category))
+
+            // Handle CategoryId update
+            if (req.CategoryId.HasValue)
+            {
+                var category = await _context.Categories.FindAsync(new object[] { req.CategoryId.Value }, ct);
+                if (category != null)
+                {
+                    eventEntity.CategoryId = req.CategoryId;
+                    eventEntity.Category = category.Name;
+                }
+            }
+            else if (!string.IsNullOrEmpty(req.Category))
+            {
                 eventEntity.Category = req.Category;
+            }
+
             if (req.Tags != null)
                 eventEntity.Tags = req.Tags;
             if (!string.IsNullOrEmpty(req.Status))
@@ -319,17 +419,24 @@ namespace Karta.Service.Services
             if (req.CoverImageUrl != null)
                 eventEntity.CoverImageUrl = req.CoverImageUrl;
             await _context.SaveChangesAsync(ct);
+
+            // Reload navigation properties
+            await _context.Entry(eventEntity).Reference(e => e.CategoryRef).LoadAsync(ct);
+            await _context.Entry(eventEntity).Reference(e => e.VenueRef).LoadAsync(ct);
+
             return new EventDto(
                 eventEntity.Id,
                 eventEntity.Title,
                 eventEntity.Slug,
                 eventEntity.Description,
-                eventEntity.Venue,
-                eventEntity.City,
-                eventEntity.Country,
+                eventEntity.VenueId,
+                eventEntity.VenueRef?.Name ?? eventEntity.Venue,
+                eventEntity.VenueRef?.City ?? eventEntity.City,
+                eventEntity.VenueRef?.Country ?? eventEntity.Country,
                 eventEntity.StartsAt,
                 eventEntity.EndsAt,
-                eventEntity.Category,
+                eventEntity.CategoryId,
+                eventEntity.CategoryRef?.Name ?? eventEntity.Category,
                 eventEntity.Tags,
                 eventEntity.Status,
                 eventEntity.CoverImageUrl,
@@ -416,6 +523,8 @@ namespace Karta.Service.Services
         {
             var events = await _context.Events
                 .Include(e => e.PriceTiers)
+                .Include(e => e.CategoryRef)
+                .Include(e => e.VenueRef)
                 .Where(e => e.CreatedBy == userId && e.Status != "Archived")
                 .OrderByDescending(e => e.CreatedAt)
                 .ToListAsync(ct);
@@ -424,12 +533,14 @@ namespace Karta.Service.Services
                 e.Title,
                 e.Slug,
                 e.Description,
-                e.Venue,
-                e.City,
-                e.Country,
+                e.VenueId,
+                e.VenueRef?.Name ?? e.Venue,
+                e.VenueRef?.City ?? e.City,
+                e.VenueRef?.Country ?? e.Country,
                 e.StartsAt,
                 e.EndsAt,
-                e.Category,
+                e.CategoryId,
+                e.CategoryRef?.Name ?? e.Category,
                 e.Tags,
                 e.Status,
                 e.CoverImageUrl,

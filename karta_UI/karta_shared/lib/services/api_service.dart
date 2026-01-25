@@ -963,4 +963,209 @@ class ApiClient {
   static void dispose() {
     _client.close();
   }
+
+  // ============ FAVORITES API ============
+
+  static Future<Map<String, dynamic>> addFavorite(String token, String eventId) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$baseUrl$apiPrefix/Event/$eventId/favorite'),
+        headers: _getHeaders(token: token),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        String errorMessage = 'Failed to add favorite';
+        try {
+          if (response.body.isNotEmpty) {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          }
+        } catch (_) {}
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      if (e is SocketException) {
+        throw Exception('Unable to connect to server. Please check your connection.');
+      }
+      rethrow;
+    }
+  }
+
+  static Future<void> removeFavorite(String token, String eventId) async {
+    try {
+      final response = await _client.delete(
+        Uri.parse('$baseUrl$apiPrefix/Event/$eventId/favorite'),
+        headers: _getHeaders(token: token),
+      );
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        String errorMessage = 'Failed to remove favorite';
+        try {
+          if (response.body.isNotEmpty) {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          }
+        } catch (_) {}
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      if (e is SocketException) {
+        throw Exception('Unable to connect to server. Please check your connection.');
+      }
+      rethrow;
+    }
+  }
+
+  static Future<List<dynamic>> getFavorites(String token) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$baseUrl$apiPrefix/Event/favorites'),
+        headers: _getHeaders(token: token),
+      );
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return [];
+        }
+        final data = jsonDecode(response.body);
+        if (data is List) {
+          return List<dynamic>.from(data);
+        }
+        return [];
+      } else {
+        String errorMessage = 'Failed to load favorites';
+        try {
+          if (response.body.isNotEmpty) {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          }
+        } catch (_) {}
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      if (e is SocketException) {
+        throw Exception('Unable to connect to server. Please check your connection.');
+      }
+      rethrow;
+    }
+  }
+
+  static Future<List<String>> getFavoriteIds(String token) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$baseUrl$apiPrefix/Event/favorite-ids'),
+        headers: _getHeaders(token: token),
+      );
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return [];
+        }
+        final data = jsonDecode(response.body);
+        if (data is List) {
+          return List<String>.from(data.map((e) => e.toString()));
+        }
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching favorite IDs: $e');
+      return [];
+    }
+  }
+
+  static Future<bool> isFavorite(String token, String eventId) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$baseUrl$apiPrefix/Event/$eventId/is-favorite'),
+        headers: _getHeaders(token: token),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['isFavorite'] == true;
+      }
+      return false;
+    } catch (e) {
+      print('Error checking favorite status: $e');
+      return false;
+    }
+  }
+
+  // ============ CATEGORIES API ============
+
+  static Future<List<dynamic>> getCategories() async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$baseUrl$apiPrefix/Category'),
+        headers: _getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return [];
+        }
+        final data = jsonDecode(response.body);
+        if (data is List) {
+          return List<dynamic>.from(data);
+        }
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching categories: $e');
+      return [];
+    }
+  }
+
+  // ============ VENUES API ============
+
+  static Future<List<dynamic>> getVenues({String? city}) async {
+    try {
+      final queryParams = city != null && city.isNotEmpty
+          ? '?city=${Uri.encodeComponent(city)}'
+          : '';
+      final response = await _client.get(
+        Uri.parse('$baseUrl$apiPrefix/Venue$queryParams'),
+        headers: _getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return [];
+        }
+        final data = jsonDecode(response.body);
+        if (data is List) {
+          return List<dynamic>.from(data);
+        }
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching venues: $e');
+      return [];
+    }
+  }
+
+  static Future<List<dynamic>> getMyVenues(String token) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$baseUrl$apiPrefix/Venue/my-venues'),
+        headers: _getHeaders(token: token),
+      );
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return [];
+        }
+        final data = jsonDecode(response.body);
+        if (data is List) {
+          return List<dynamic>.from(data);
+        }
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching my venues: $e');
+      return [];
+    }
+  }
 }

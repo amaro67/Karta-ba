@@ -979,6 +979,23 @@ class ApiClient {
       rethrow;
     }
   }
+  // Categories
+  static Future<List<dynamic>> getCategories() async {
+    return await getList('/Category');
+  }
+
+  // Venues
+  static Future<List<dynamic>> getVenues({String? city}) async {
+    final queryParams = <String>[];
+    if (city != null && city.isNotEmpty) queryParams.add('city=$city');
+    final queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
+    return await getList('/Venue$queryString');
+  }
+
+  static Future<List<dynamic>> getMyVenues(String token) async {
+    return await getList('/Venue/my-venues', token: token);
+  }
+
   static void dispose() {
     _client.close();
   }

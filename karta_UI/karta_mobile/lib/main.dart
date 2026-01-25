@@ -29,6 +29,20 @@ class KartaMobileApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => CategoriesProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, VenuesProvider>(
+          create: (context) {
+            final provider = VenuesProvider();
+            final auth = context.read<AuthProvider>();
+            provider.setToken(auth.accessToken);
+            return provider;
+          },
+          update: (context, auth, previous) {
+            final provider = previous ?? VenuesProvider();
+            provider.setToken(auth.accessToken);
+            return provider;
+          },
+        ),
         ChangeNotifierProxyProvider<AuthProvider, EventProvider>(
           create: (context) => EventProvider(context.read<AuthProvider>()),
           update: (context, auth, previous) => EventProvider(auth),
@@ -36,6 +50,25 @@ class KartaMobileApp extends StatelessWidget {
         ChangeNotifierProxyProvider<AuthProvider, TicketProvider>(
           create: (context) => TicketProvider(context.read<AuthProvider>()),
           update: (context, auth, previous) => TicketProvider(auth),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, FavoritesProvider>(
+          create: (context) {
+            final provider = FavoritesProvider();
+            final auth = context.read<AuthProvider>();
+            provider.setToken(auth.accessToken);
+            if (auth.isAuthenticated) {
+              provider.loadFavoriteIds();
+            }
+            return provider;
+          },
+          update: (context, auth, previous) {
+            final provider = previous ?? FavoritesProvider();
+            provider.setToken(auth.accessToken);
+            if (auth.isAuthenticated && previous?.favoriteIds.isEmpty == true) {
+              provider.loadFavoriteIds();
+            }
+            return provider;
+          },
         ),
       ],
       child: Consumer<AuthProvider>(

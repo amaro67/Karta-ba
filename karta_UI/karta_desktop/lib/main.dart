@@ -8,6 +8,8 @@ import 'providers/ticket_provider.dart';
 import 'providers/organizer_provider.dart';
 import 'providers/scanner_provider.dart';
 import 'providers/organizer_sales_provider.dart';
+import 'providers/categories_provider.dart';
+import 'providers/venues_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/admin/user_detail_screen.dart';
 import 'widgets/admin_layout.dart';
@@ -24,6 +26,15 @@ class KartaDesktopApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => CategoriesProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, VenuesProvider>(
+          create: (_) => VenuesProvider(),
+          update: (_, authProvider, venuesProvider) {
+            venuesProvider ??= VenuesProvider();
+            venuesProvider.setToken(authProvider.accessToken);
+            return venuesProvider;
+          },
+        ),
         ChangeNotifierProxyProvider<AuthProvider, AdminProvider>(
           create: (_) => AdminProvider(AuthProvider()),
           update: (_, authProvider, adminProvider) {

@@ -198,7 +198,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (!_useTestData) {
         _loadEvents();
       }
+      _loadFavorites();
     });
+  }
+
+  Future<void> _loadFavorites() async {
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.isAuthenticated) {
+      final favoritesProvider = context.read<FavoritesProvider>();
+      await favoritesProvider.loadFavorites();
+    }
   }
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -206,6 +215,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       print('🟢 HomeScreen: App resumed, reloading viewed events');
       _loadViewedEvents();
+      _loadFavorites();
     }
   }
   Future<void> _loadViewedEvents() async {
@@ -510,6 +520,88 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 ),
               ),
+            // My Favorites Section
+            if (!_hasActiveFilters)
+              Consumer<FavoritesProvider>(
+                builder: (context, favoritesProvider, child) {
+                  final authProvider = context.read<AuthProvider>();
+                  if (!authProvider.isAuthenticated) {
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  }
+                  final favorites = favoritesProvider.favorites;
+                  if (favorites.isEmpty && !favoritesProvider.isLoading) {
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  }
+                  return SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.favorite,
+                                    color: Colors.red,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'My Favorites',
+                                    style: Theme.of(context).textTheme.headlineSmall,
+                                  ),
+                                ],
+                              ),
+                              if (favorites.isNotEmpty)
+                                TextButton(
+                                  onPressed: () {
+                                    // Could navigate to a full favorites list screen
+                                  },
+                                  child: Text('${favorites.length} events'),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (favoritesProvider.isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (favorites.isNotEmpty)
+                          SizedBox(
+                            height: 280,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.only(left: 16, right: 4),
+                              itemCount: favorites.length,
+                              itemBuilder: (context, index) {
+                                return EventCard(
+                                  event: favorites[index],
+                                  onTap: () async {
+                                    await Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.eventDetail,
+                                      arguments: favorites[index],
+                                    );
+                                    await _loadViewedEvents();
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
             if (!_hasActiveFilters)
               _useTestData
                   ? SliverToBoxAdapter(

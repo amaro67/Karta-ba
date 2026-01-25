@@ -7,14 +7,20 @@ class EventDto {
   final String title;
   final String slug;
   final String? description;
-  final String venue;
+  @JsonKey(name: 'venueId')
+  final String? venueId;
+  @JsonKey(name: 'venueName', defaultValue: '')
+  final String venue;  // Maps from venueName for backwards compatibility
   final String city;
   final String country;
   @JsonKey(name: 'startsAt')
   final DateTime startsAt;
   @JsonKey(name: 'endsAt')
   final DateTime? endsAt;
-  final String category;
+  @JsonKey(name: 'categoryId')
+  final String? categoryId;
+  @JsonKey(name: 'categoryName', defaultValue: '')
+  final String category;  // Maps from categoryName for backwards compatibility
   final String? tags;
   final String status;
   @JsonKey(name: 'coverImageUrl')
@@ -28,11 +34,13 @@ class EventDto {
     required this.title,
     required this.slug,
     this.description,
+    this.venueId,
     required this.venue,
     required this.city,
     required this.country,
     required this.startsAt,
     this.endsAt,
+    this.categoryId,
     required this.category,
     this.tags,
     required this.status,
@@ -42,20 +50,47 @@ class EventDto {
   });
   factory EventDto.fromJson(Map<String, dynamic> json) {
     try {
-      return _$EventDtoFromJson(json);
+      // Handle both old (venue/category) and new (venueName/categoryName) field names
+      final modifiedJson = Map<String, dynamic>.from(json);
+
+      // If venueName exists, use it; otherwise fall back to venue
+      if (modifiedJson['venueName'] == null && modifiedJson['venue'] != null) {
+        modifiedJson['venueName'] = modifiedJson['venue'];
+      }
+
+      // If categoryName exists, use it; otherwise fall back to category
+      if (modifiedJson['categoryName'] == null && modifiedJson['category'] != null) {
+        modifiedJson['categoryName'] = modifiedJson['category'];
+      }
+
+      return _$EventDtoFromJson(modifiedJson);
     } catch (e, stackTrace) {
-      print('🔴 Error parsing EventDto: $e');
-      print('🔴 Stack trace: $stackTrace');
-      print('🔴 JSON data: $json');
+      print('Error parsing EventDto: $e');
+      print('Stack trace: $stackTrace');
+      print('JSON data: $json');
       try {
         final id = json['id']?.toString() ?? json['Id']?.toString() ?? '';
         final title = json['title']?.toString() ?? json['Title']?.toString() ?? '';
         final slug = json['slug']?.toString() ?? json['Slug']?.toString() ?? '';
         final description = json['description']?.toString() ?? json['Description']?.toString();
-        final venue = json['venue']?.toString() ?? json['Venue']?.toString() ?? '';
+
+        // Handle venueId and venueName
+        final venueId = json['venueId']?.toString() ?? json['VenueId']?.toString();
+        final venue = json['venueName']?.toString() ??
+                      json['VenueName']?.toString() ??
+                      json['venue']?.toString() ??
+                      json['Venue']?.toString() ?? '';
+
         final city = json['city']?.toString() ?? json['City']?.toString() ?? '';
         final country = json['country']?.toString() ?? json['Country']?.toString() ?? '';
-        final category = json['category']?.toString() ?? json['Category']?.toString() ?? '';
+
+        // Handle categoryId and categoryName
+        final categoryId = json['categoryId']?.toString() ?? json['CategoryId']?.toString();
+        final category = json['categoryName']?.toString() ??
+                         json['CategoryName']?.toString() ??
+                         json['category']?.toString() ??
+                         json['Category']?.toString() ?? '';
+
         final tags = json['tags']?.toString() ?? json['Tags']?.toString();
         final status = json['status']?.toString() ?? json['Status']?.toString() ?? '';
         final coverImageUrl = json['coverImageUrl']?.toString() ?? json['CoverImageUrl']?.toString();
@@ -76,11 +111,13 @@ class EventDto {
           title: title,
           slug: slug,
           description: description,
+          venueId: venueId,
           venue: venue,
           city: city,
           country: country,
           startsAt: startsAt,
           endsAt: endsAt,
+          categoryId: categoryId,
           category: category,
           tags: tags,
           status: status,
@@ -89,7 +126,7 @@ class EventDto {
           priceTiers: priceTiers,
         );
       } catch (fallbackError) {
-        print('🔴 Fallback parsing also failed: $fallbackError');
+        print('Fallback parsing also failed: $fallbackError');
         rethrow;
       }
     }

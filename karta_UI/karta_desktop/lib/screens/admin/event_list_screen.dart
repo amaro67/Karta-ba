@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/event_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/categories_provider.dart';
 import '../../model/event/event_dto.dart';
 import 'event_form_screen.dart';
 import 'event_detail_screen.dart';
@@ -26,6 +27,7 @@ class _EventListScreenState extends State<EventListScreen> {
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<EventProvider>().loadEvents(useAdminEndpoint: true);
+      context.read<CategoriesProvider>().loadCategories();
     });
   }
   @override
@@ -710,18 +712,6 @@ class _FilterDialogState extends State<_FilterDialog> {
   late String? _category;
   late String? _city;
   late String? _status;
-  final List<String> _commonCategories = [
-    'Muzika',
-    'Sport',
-    'Kultura',
-    'Zabava',
-    'Biznis',
-    'Obrazovanje',
-    'Tehnologija',
-    'Umjetnost',
-    'Film',
-    'Festival',
-  ];
   final List<String> _commonCities = [
     'Sarajevo',
     'Banja Luka',
@@ -741,6 +731,9 @@ class _FilterDialogState extends State<_FilterDialog> {
   }
   @override
   Widget build(BuildContext context) {
+    final categoriesProvider = context.watch<CategoriesProvider>();
+    final categories = categoriesProvider.categoryNames;
+
     return AlertDialog(
       title: const Text('Filtriraj evente'),
       content: SingleChildScrollView(
@@ -755,22 +748,25 @@ class _FilterDialogState extends State<_FilterDialog> {
                   ),
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _commonCategories.map((cat) {
-                final isSelected = _category == cat;
-                return FilterChip(
-                  label: Text(cat),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      _category = selected ? cat : null;
-                    });
-                  },
-                );
-              }).toList(),
-            ),
+            if (categoriesProvider.isLoading)
+              const Center(child: CircularProgressIndicator())
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: categories.map((cat) {
+                  final isSelected = _category == cat;
+                  return FilterChip(
+                    label: Text(cat),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _category = selected ? cat : null;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
             const SizedBox(height: 16),
             Text(
               'Grad',

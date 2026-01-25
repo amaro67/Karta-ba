@@ -22,6 +22,7 @@ namespace Karta.WebAPI.Controllers
     public class EventController : ControllerBase
     {
         private readonly IEventService _eventService;
+        private readonly IFavoriteService _favoriteService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
         private readonly IRabbitMQService _rabbitMQService;
@@ -29,7 +30,8 @@ namespace Karta.WebAPI.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<EventController> _logger;
         public EventController(
-            IEventService eventService, 
+            IEventService eventService,
+            IFavoriteService favoriteService,
             UserManager<ApplicationUser> userManager,
             ApplicationDbContext context,
             IRabbitMQService rabbitMQService,
@@ -38,6 +40,7 @@ namespace Karta.WebAPI.Controllers
             ILogger<EventController> logger)
         {
             _eventService = eventService;
+            _favoriteService = favoriteService;
             _userManager = userManager;
             _context = context;
             _rabbitMQService = rabbitMQService;
@@ -210,7 +213,7 @@ namespace Karta.WebAPI.Controllers
         }
         [HttpPost("track-view")]
         [Authorize]
-        [SwaggerOperation(Summary = "Prati kada korisnik pregleda event", 
+        [SwaggerOperation(Summary = "Prati kada korisnik pregleda event",
                          Description = "Koristi se za content-based preporuke. Kada korisnik pogleda 2+ eventa iste kategorije u jednom danu, sistem šalje email sa preporukama")]
         [SwaggerResponse(200, "Tracking uspješan")]
         [SwaggerResponse(401, "Korisnik nije autentifikovan")]
@@ -221,8 +224,9 @@ namespace Karta.WebAPI.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
             var eventItem = await _context.Events
+                .Include(e => e.CategoryRef)
                 .Where(e => e.Id == request.EventId)
-                .Select(e => new { e.Category })
+                .Select(e => new { e.CategoryId, e.Category, CategoryName = e.CategoryRef != null ? e.CategoryRef.Name : e.Category })
                 .FirstOrDefaultAsync();
             if (eventItem == null)
             {
@@ -230,24 +234,42 @@ namespace Karta.WebAPI.Controllers
                 return NotFound(new { message = "Event not found" });
             }
             var today = DateTime.UtcNow.Date;
-            var dailyView = await _context.UserDailyEventViews
-                .FirstOrDefaultAsync(x =>
-                    x.UserId == userId &&
-                    x.Category == eventItem.Category &&
-                    x.Date == today);
+            var categoryName = eventItem.CategoryName;
+
+            // Find daily view by CategoryId if available, otherwise by Category string
+            UserDailyEventView? dailyView;
+            if (eventItem.CategoryId.HasValue)
+            {
+                dailyView = await _context.UserDailyEventViews
+                    .FirstOrDefaultAsync(x =>
+                        x.UserId == userId &&
+                        x.CategoryId == eventItem.CategoryId &&
+                        x.Date == today);
+            }
+            else
+            {
+                dailyView = await _context.UserDailyEventViews
+                    .FirstOrDefaultAsync(x =>
+                        x.UserId == userId &&
+                        x.CategoryId == null &&
+                        x.Category == eventItem.Category &&
+                        x.Date == today);
+            }
+
             if (dailyView == null)
             {
                 dailyView = new UserDailyEventView
                 {
                     UserId = userId,
-                    Category = eventItem.Category,
+                    CategoryId = eventItem.CategoryId,
+                    Category = categoryName,
                     Date = today,
                     ViewCount = 1,
                     EmailSentToday = false
                 };
                 _context.UserDailyEventViews.Add(dailyView);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation($"User {userId} viewed {eventItem.Category} - Count: 1");
+                _logger.LogInformation($"User {userId} viewed {categoryName} - Count: 1");
                 return Ok(new
                 {
                     viewCount = 1,
@@ -259,22 +281,32 @@ namespace Karta.WebAPI.Controllers
             {
                 dailyView.ViewCount++;
                 await _context.SaveChangesAsync();
-                _logger.LogInformation($"User {userId} viewed {eventItem.Category} - Count: {dailyView.ViewCount}");
+                _logger.LogInformation($"User {userId} viewed {categoryName} - Count: {dailyView.ViewCount}");
                 if (dailyView.ViewCount >= 2 && !dailyView.EmailSentToday)
                 {
-                    _logger.LogInformation($"🔔 TRIGGER! Sending recommendation email for {eventItem.Category} to user {userId}");
+                    _logger.LogInformation($"🔔 TRIGGER! Sending recommendation email for {categoryName} to user {userId}");
                     var user = await _userManager.FindByIdAsync(userId);
                     if (user != null && !string.IsNullOrEmpty(user.Email))
                     {
-                        var categoryEvents = await _context.Events
-                            .Include(e => e.PriceTiers)
-                            .Where(e =>
-                                e.Category == eventItem.Category &&
-                                e.Status == "Published" &&
-                                e.StartsAt > DateTimeOffset.UtcNow)
+                        // Find events by CategoryId if available, otherwise by Category string
+                        IQueryable<Event> categoryEventsQuery = _context.Events
+                            .Include(e => e.PriceTiers);
+
+                        if (eventItem.CategoryId.HasValue)
+                        {
+                            categoryEventsQuery = categoryEventsQuery.Where(e => e.CategoryId == eventItem.CategoryId);
+                        }
+                        else
+                        {
+                            categoryEventsQuery = categoryEventsQuery.Where(e => e.Category == eventItem.Category);
+                        }
+
+                        var categoryEvents = await categoryEventsQuery
+                            .Where(e => e.Status == "Published" && e.StartsAt > DateTimeOffset.UtcNow)
                             .OrderBy(e => e.StartsAt)
                             .Take(10)
                             .ToListAsync();
+
                         if (categoryEvents.Any())
                         {
                             dailyView.EmailSentToday = true;
@@ -282,15 +314,14 @@ namespace Karta.WebAPI.Controllers
                             await _context.SaveChangesAsync();
                             var userEmail = user.Email;
                             var userName = user.FirstName ?? userEmail.Split('@')[0];
-                            var category = eventItem.Category;
-                            var emailBody = GenerateCategoryRecommendationEmailBody(userName, category, categoryEvents);
+                            var emailBody = GenerateCategoryRecommendationEmailBody(userName, categoryName, categoryEvents);
                             await _emailService.SendCategoryRecommendationAsync(
                                 userEmail!,
-                                $"🎟️ {category} Events You'll Love!",
+                                $"🎟️ {categoryName} Events You'll Love!",
                                 emailBody
                             );
                             _logger.LogInformation("Category recommendation email queued for {Email} - Category: {Category}, Events: {Count}",
-                                userEmail, category, categoryEvents.Count);
+                                userEmail, categoryName, categoryEvents.Count);
                         }
                     }
                     return Ok(new
@@ -472,6 +503,100 @@ namespace Karta.WebAPI.Controllers
                     ex.GetType().Name, ex.Message, ex.StackTrace);
                 return StatusCode(500, new { message = $"Greška pri uploadovanju slike: {ex.Message}" });
             }
+        }
+
+        // ============ FAVORITES ENDPOINTS ============
+
+        [HttpPost("{id}/favorite")]
+        [Authorize]
+        [SwaggerOperation(Summary = "Dodaje event u favorite",
+                         Description = "Dodaje event u listu omiljenih za trenutnog korisnika")]
+        [SwaggerResponse(200, "Event uspešno dodan u favorite", typeof(FavoriteDto))]
+        [SwaggerResponse(401, "Korisnik nije autentifikovan")]
+        [SwaggerResponse(404, "Event nije pronađen")]
+        public async Task<ActionResult<FavoriteDto>> AddFavorite(Guid id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                var favorite = await _favoriteService.AddFavoriteAsync(userId, id);
+                return Ok(favorite);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}/favorite")]
+        [Authorize]
+        [SwaggerOperation(Summary = "Uklanja event iz favorita",
+                         Description = "Uklanja event iz liste omiljenih za trenutnog korisnika")]
+        [SwaggerResponse(204, "Event uspešno uklonjen iz favorita")]
+        [SwaggerResponse(401, "Korisnik nije autentifikovan")]
+        [SwaggerResponse(404, "Event nije u favoritima")]
+        public async Task<ActionResult> RemoveFavorite(Guid id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var success = await _favoriteService.RemoveFavoriteAsync(userId, id);
+            if (!success)
+                return NotFound(new { message = "Event is not in favorites" });
+
+            return NoContent();
+        }
+
+        [HttpGet("favorites")]
+        [Authorize]
+        [SwaggerOperation(Summary = "Dohvata sve favorite korisnika",
+                         Description = "Vraća listu svih omiljenih eventa za trenutnog korisnika")]
+        [SwaggerResponse(200, "Uspešno vraćena lista favorita", typeof(IReadOnlyList<FavoriteEventDto>))]
+        [SwaggerResponse(401, "Korisnik nije autentifikovan")]
+        public async Task<ActionResult<IReadOnlyList<FavoriteEventDto>>> GetFavorites()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var favorites = await _favoriteService.GetFavoritesAsync(userId);
+            return Ok(favorites);
+        }
+
+        [HttpGet("favorite-ids")]
+        [Authorize]
+        [SwaggerOperation(Summary = "Dohvata ID-eve svih favorita korisnika",
+                         Description = "Vraća listu ID-eva omiljenih eventa za brzu provjeru")]
+        [SwaggerResponse(200, "Uspešno vraćena lista ID-eva", typeof(IReadOnlyList<Guid>))]
+        [SwaggerResponse(401, "Korisnik nije autentifikovan")]
+        public async Task<ActionResult<IReadOnlyList<Guid>>> GetFavoriteIds()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var favoriteIds = await _favoriteService.GetFavoriteEventIdsAsync(userId);
+            return Ok(favoriteIds);
+        }
+
+        [HttpGet("{id}/is-favorite")]
+        [Authorize]
+        [SwaggerOperation(Summary = "Provjerava da li je event u favoritima",
+                         Description = "Vraća true ako je event u listi omiljenih za trenutnog korisnika")]
+        [SwaggerResponse(200, "Uspešno vraćen status", typeof(object))]
+        [SwaggerResponse(401, "Korisnik nije autentifikovan")]
+        public async Task<ActionResult> IsFavorite(Guid id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var isFavorite = await _favoriteService.IsFavoriteAsync(userId, id);
+            return Ok(new { isFavorite });
         }
     }
     public class TrackEventViewRequest

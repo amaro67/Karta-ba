@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import '../../providers/event_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/categories_provider.dart';
 import '../../model/event/event_dto.dart';
 import '../../utils/base_textfield.dart';
 import '../../utils/error_dialog.dart';
@@ -27,20 +28,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
   final _coverImageUrlController = TextEditingController();
   final List<_TicketOptionController> _ticketOptions = [];
   final List<String> _supportedCurrencies = const ['BAM', 'EUR', 'USD'];
-  final List<String> _categories = const [
-    'Muzika',
-    'Sport',
-    'Kultura',
-    'Zabava',
-    'Biznis',
-    'Obrazovanje',
-    'Edukacija',
-    'Tehnologija',
-    'Umjetnost',
-    'Film',
-    'Festival',
-    'Pozoriste',
-  ];
   final List<String> _cities = const [
     'Sarajevo',
     'Banja Luka',
@@ -77,6 +64,10 @@ class _EventFormScreenState extends State<EventFormScreen> {
         setState(() {});
       }
     });
+    // Load categories from API
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CategoriesProvider>().loadCategories();
+    });
   }
   void _populateForm(EventDto event) {
     _titleController.text = event.title;
@@ -86,10 +77,8 @@ class _EventFormScreenState extends State<EventFormScreen> {
     _selectedCity = event.city;
     _countryController.text = 'Bosnia and Herzegovina';
     _categoryController.text = event.category;
-    // Provjeri da li je kategorija u listi, ako nije postavi na prvu kategoriju
-    _selectedCategory = _categories.contains(event.category) 
-        ? event.category 
-        : _categories.isNotEmpty ? _categories.first : null;
+    // Set selected category - will be validated against API categories in build
+    _selectedCategory = event.category;
     _tagsController.text = event.tags ?? '';
     _coverImageUrlController.text = event.coverImageUrl ?? '';
     _startsAt = event.startsAt;
@@ -436,50 +425,63 @@ class _EventFormScreenState extends State<EventFormScreen> {
                           Row(
                             children: [
                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Category *',
-                                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF212121),
-                                            fontSize: 13,
+                                child: Consumer<CategoriesProvider>(
+                                  builder: (context, categoriesProvider, child) {
+                                    final categories = categoriesProvider.categoryNames;
+                                    // Validate selected category against available categories
+                                    final validatedCategory = categories.contains(_selectedCategory)
+                                        ? _selectedCategory
+                                        : null;
+
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Category *',
+                                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                color: const Color(0xFF212121),
+                                                fontSize: 13,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        if (categoriesProvider.isLoading)
+                                          const LinearProgressIndicator()
+                                        else
+                                          DropdownButtonFormField<String>(
+                                            value: validatedCategory,
+                                            decoration: InputDecoration(
+                                              hintText: 'Odaberi kategoriju',
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              contentPadding: const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 14,
+                                              ),
+                                            ),
+                                            items: categories.map((category) {
+                                              return DropdownMenuItem<String>(
+                                                value: category,
+                                                child: Text(category),
+                                              );
+                                            }).toList(),
+                                            validator: (value) {
+                                              if (value == null || value.isEmpty) {
+                                                return 'Category is required';
+                                              }
+                                              return null;
+                                            },
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _selectedCategory = value;
+                                                _categoryController.text = value ?? '';
+                                              });
+                                            },
                                           ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    DropdownButtonFormField<String>(
-                                      value: _selectedCategory,
-                                      decoration: InputDecoration(
-                                        hintText: 'Odaberi kategoriju',
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 14,
-                                        ),
-                                      ),
-                                      items: _categories.map((category) {
-                                        return DropdownMenuItem<String>(
-                                          value: category,
-                                          child: Text(category),
-                                        );
-                                      }).toList(),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Category is required';
-                                        }
-                                        return null;
-                                      },
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedCategory = value;
-                                          _categoryController.text = value ?? '';
-                                        });
-                                      },
-                                    ),
-                                  ],
+                                      ],
+                                    );
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 16),

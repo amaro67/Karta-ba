@@ -4,6 +4,7 @@ using Karta.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Karta.WebAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260125084945_AddCategoriesVenuesFavorites")]
+    partial class AddCategoriesVenuesFavorites
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -551,9 +554,6 @@ namespace Karta.WebAPI.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<Guid?>("CategoryId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
@@ -575,16 +575,12 @@ namespace Karta.WebAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
+                    b.HasIndex("Category");
 
                     b.HasIndex("Date");
 
                     b.HasIndex("UserId", "Category", "Date")
-                        .HasFilter("[CategoryId] IS NULL");
-
-                    b.HasIndex("UserId", "CategoryId", "Date")
-                        .IsUnique()
-                        .HasFilter("[CategoryId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("UserDailyEventViews");
                 });
@@ -887,18 +883,11 @@ namespace Karta.WebAPI.Migrations
 
             modelBuilder.Entity("Karta.Model.Entities.UserDailyEventView", b =>
                 {
-                    b.HasOne("Karta.Model.Entities.Category", "CategoryRef")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("Karta.Model.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("CategoryRef");
 
                     b.Navigation("User");
                 });
