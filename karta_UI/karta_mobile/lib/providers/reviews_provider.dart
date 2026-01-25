@@ -75,7 +75,6 @@ class ReviewsProvider extends ChangeNotifier {
       }
     } catch (e) {
       _userReview = null;
-      // 404 is expected if user hasn't reviewed
     }
     notifyListeners();
   }
@@ -91,8 +90,6 @@ class ReviewsProvider extends ChangeNotifier {
       final data = await ApiClient.createReview(_token!, eventId, request.toJson());
       _userReview = ReviewDto.fromJson(data);
       _canReview = false;
-
-      // Reload reviews to update the list
       await loadEventReviews(eventId);
 
       return true;
@@ -116,8 +113,6 @@ class ReviewsProvider extends ChangeNotifier {
     try {
       final data = await ApiClient.updateReview(_token!, reviewId, request.toJson());
       _userReview = ReviewDto.fromJson(data);
-
-      // Reload reviews to update the list
       if (_currentEventId != null) {
         await loadEventReviews(_currentEventId!);
       }
@@ -144,8 +139,6 @@ class ReviewsProvider extends ChangeNotifier {
       await ApiClient.deleteReview(_token!, reviewId);
       _userReview = null;
       _canReview = true;
-
-      // Reload reviews to update the list
       if (_currentEventId != null) {
         await loadEventReviews(_currentEventId!);
       }

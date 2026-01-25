@@ -64,7 +64,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
         setState(() {});
       }
     });
-    // Load categories from API
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CategoriesProvider>().loadCategories();
     });

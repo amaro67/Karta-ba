@@ -719,8 +719,6 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
           child: CircularProgressIndicator(),
         ),
       );
-
-      // Create PDF document
       final pdf = pw.Document();
       final now = DateTime.now();
       final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
@@ -731,7 +729,6 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
           margin: const pw.EdgeInsets.all(40),
           build: (pw.Context context) {
             return [
-              // Header
               pw.Header(
                 level: 0,
                 child: pw.Row(
@@ -829,8 +826,6 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                 ],
               ),
               pw.SizedBox(height: 30),
-
-              // Summary
               pw.Container(
                 padding: const pw.EdgeInsets.all(16),
                 decoration: pw.BoxDecoration(

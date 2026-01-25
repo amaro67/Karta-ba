@@ -964,8 +964,6 @@ class ApiClient {
     _client.close();
   }
 
-  // ============ FAVORITES API ============
-
   static Future<Map<String, dynamic>> addFavorite(String token, String eventId) async {
     try {
       final response = await _client.post(
@@ -1090,8 +1088,6 @@ class ApiClient {
     }
   }
 
-  // ============ CATEGORIES API ============
-
   static Future<List<dynamic>> getCategories() async {
     try {
       final response = await _client.get(
@@ -1115,8 +1111,6 @@ class ApiClient {
       return [];
     }
   }
-
-  // ============ VENUES API ============
 
   static Future<List<dynamic>> getVenues({String? city}) async {
     try {
@@ -1169,8 +1163,6 @@ class ApiClient {
     }
   }
 
-  // ============ REVIEWS API ============
-
   static Future<Map<String, dynamic>> getEventReviews(String eventId, {int page = 1, int pageSize = 10}) async {
     return await get('/Review/event/$eventId?page=$page&pageSize=$pageSize');
   }
@@ -1189,7 +1181,6 @@ class ApiClient {
     try {
       return await get('/Review/event/$eventId/my-review', token: token);
     } catch (e) {
-      // 404 is expected if user hasn't reviewed
       return null;
     }
   }

@@ -207,10 +207,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     }
 
     try {
-      // Check if user can review
       final canReview = await ApiClient.canUserReviewEvent(token, eventId);
-
-      // Load user's existing review if any
       ReviewDto? userReview;
       final reviewData = await ApiClient.getUserReviewForEvent(token, eventId);
       if (reviewData != null) {
@@ -246,8 +243,6 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         'existingReview': _userReview,
       },
     );
-
-    // Reload review status if a review was submitted
     if (result == true) {
       _loadReviewStatus(_event!.id);
     }
@@ -434,7 +429,6 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             ),
             const SizedBox(height: 12),
           ],
-          // Review button
           if (_event != null && !_isLoadingReviewStatus) ...[
             if (_canReview || _userReview != null)
               ElevatedButton.icon(

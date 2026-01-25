@@ -15,6 +15,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   int _quantity = 1;
   PriceTierDto? _selectedTier;
   bool _hasRecordedView = false;
+  EventReviewsDto? _eventReviews;
+  bool _isLoadingReviews = false;
+  bool _showAllReviews = false;
   int get _availableTickets {
     if (_selectedTier == null) return 0;
     return _selectedTier!.capacity - _selectedTier!.sold;
@@ -37,6 +40,32 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       }
       _hasRecordedView = true;
       print('🔴 EventDetailScreen: View recorded successfully');
+      _loadReviews(event.id);
+    }
+  }
+
+  Future<void> _loadReviews(String eventId) async {
+    if (_isLoadingReviews) return;
+
+    setState(() {
+      _isLoadingReviews = true;
+    });
+
+    try {
+      final data = await ApiClient.getEventReviews(eventId, page: 1, pageSize: 10);
+      if (mounted) {
+        setState(() {
+          _eventReviews = EventReviewsDto.fromJson(data);
+          _isLoadingReviews = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading reviews: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingReviews = false;
+        });
+      }
     }
   }
   String _formatDateTime(DateTime date) {
@@ -80,6 +109,218 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       },
     );
   }
+  Widget _buildStarRating(double rating, {double size = 16}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        final starValue = index + 1;
+        if (rating >= starValue) {
+          return Icon(Icons.star, size: size, color: Colors.amber);
+        } else if (rating >= starValue - 0.5) {
+          return Icon(Icons.star_half, size: size, color: Colors.amber);
+        } else {
+          return Icon(Icons.star_border, size: size, color: Colors.amber);
+        }
+      }),
+    );
+  }
+
+  Widget _buildReviewCard(ReviewDto review) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.backgroundGray),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: AppTheme.primaryColor,
+                child: Text(
+                  review.userName.isNotEmpty ? review.userName[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.userName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        _buildStarRating(review.rating.toDouble(), size: 12),
+                        const SizedBox(width: 8),
+                        Text(
+                          DateFormat('d.M.yyyy').format(review.createdAt),
+                          style: TextStyle(
+                            color: AppTheme.textTertiary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            review.title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            review.content,
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
+              height: 1.4,
+            ),
+            maxLines: _showAllReviews ? null : 3,
+            overflow: _showAllReviews ? null : TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsSection() {
+    if (_isLoadingReviews) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: SizedBox(
+            height: 24,
+            width: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (_eventReviews == null || _eventReviews!.totalCount == 0) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.backgroundGray.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.rate_review_outlined, color: AppTheme.textTertiary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Još nema recenzija za ovaj događaj',
+                style: TextStyle(color: AppTheme.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final reviews = _eventReviews!.reviews;
+    final displayReviews = _showAllReviews ? reviews : reviews.take(3).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Column(
+                children: [
+                  Text(
+                    _eventReviews!.averageRating.toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  _buildStarRating(_eventReviews!.averageRating, size: 18),
+                ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_eventReviews!.totalCount} ${_eventReviews!.totalCount == 1 ? 'recenzija' : 'recenzija'}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Bazirano na korisničkim iskustvima',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...displayReviews.map((review) => _buildReviewCard(review)),
+        if (reviews.length > 3)
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _showAllReviews = !_showAllReviews;
+              });
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _showAllReviews ? 'Prikaži manje' : 'Prikaži sve recenzije (${reviews.length})',
+                  style: TextStyle(color: AppTheme.primaryColor),
+                ),
+                Icon(
+                  _showAllReviews ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: AppTheme.primaryColor,
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
   bool _canPurchaseTickets(EventDto event) {
     if (!event.isPublished || event.isDraft) {
       return false;
@@ -212,6 +453,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
+                      Text(
+                        'Recenzije',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildReviewsSection(),
+                      const SizedBox(height: 24),
+
                       if (canPurchase && event.priceTiers.isNotEmpty) ...[
                         Text(
                           'Select ticket type',

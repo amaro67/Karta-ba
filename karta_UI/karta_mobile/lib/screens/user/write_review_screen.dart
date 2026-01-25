@@ -66,7 +66,6 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
     bool success;
 
     if (_existingReview != null) {
-      // Update existing review
       success = await reviewsProvider.updateReview(
         _existingReview!.id,
         UpdateReviewRequest(
@@ -76,7 +75,6 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
         ),
       );
     } else {
-      // Create new review
       success = await reviewsProvider.createReview(
         _eventId!,
         CreateReviewRequest(

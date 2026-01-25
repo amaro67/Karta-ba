@@ -50,15 +50,10 @@ class EventDto {
   });
   factory EventDto.fromJson(Map<String, dynamic> json) {
     try {
-      // Handle both old (venue/category) and new (venueName/categoryName) field names
       final modifiedJson = Map<String, dynamic>.from(json);
-
-      // If venueName exists, use it; otherwise fall back to venue
       if (modifiedJson['venueName'] == null && modifiedJson['venue'] != null) {
         modifiedJson['venueName'] = modifiedJson['venue'];
       }
-
-      // If categoryName exists, use it; otherwise fall back to category
       if (modifiedJson['categoryName'] == null && modifiedJson['category'] != null) {
         modifiedJson['categoryName'] = modifiedJson['category'];
       }
@@ -73,8 +68,6 @@ class EventDto {
         final title = json['title']?.toString() ?? json['Title']?.toString() ?? '';
         final slug = json['slug']?.toString() ?? json['Slug']?.toString() ?? '';
         final description = json['description']?.toString() ?? json['Description']?.toString();
-
-        // Handle venueId and venueName
         final venueId = json['venueId']?.toString() ?? json['VenueId']?.toString();
         final venue = json['venueName']?.toString() ??
                       json['VenueName']?.toString() ??
@@ -83,8 +76,6 @@ class EventDto {
 
         final city = json['city']?.toString() ?? json['City']?.toString() ?? '';
         final country = json['country']?.toString() ?? json['Country']?.toString() ?? '';
-
-        // Handle categoryId and categoryName
         final categoryId = json['categoryId']?.toString() ?? json['CategoryId']?.toString();
         final category = json['categoryName']?.toString() ??
                          json['CategoryName']?.toString() ??
