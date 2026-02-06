@@ -11,6 +11,7 @@ import 'providers/organizer_sales_provider.dart';
 import 'providers/categories_provider.dart';
 import 'providers/venues_provider.dart';
 import 'providers/reviews_provider.dart';
+import 'providers/notification_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/admin/user_detail_screen.dart';
 import 'widgets/admin_layout.dart';
@@ -86,6 +87,14 @@ class KartaDesktopApp extends StatelessWidget {
             reviewsProvider ??= ReviewsProvider(authProvider);
             reviewsProvider.updateAuthProvider(authProvider);
             return reviewsProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, NotificationProvider>(
+          create: (_) => NotificationProvider(),
+          update: (_, authProvider, notificationProvider) {
+            notificationProvider ??= NotificationProvider();
+            notificationProvider.setToken(authProvider.accessToken);
+            return notificationProvider;
           },
         ),
       ],

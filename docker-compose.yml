@@ -35,10 +35,10 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       
       # Connection string za SQL Server
-      - CONNECTION_STRING=Server=sqlserver,1433;Database=KartaDb;User Id=sa;Password=KartaPassword2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;
+      - CONNECTION_STRING=Server=sqlserver,1433;Database=IB210242;User Id=sa;Password=KartaPassword2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;
       
       # JWT konfiguracija
-      - JWT_SECRET_KEY=your_super_secret_jwt_key_here_at_least_32_characters_long
+      - JWT_SECRET_KEY=fAh832gE8zyref2GTKERcf2XELdJ8VDmjPTmZbAbAZPYHZ/zwQ5bzWUJna75beO5
       - JWT_EXPIRY_MINUTES=60
       - JWT_REFRESH_TOKEN_EXPIRY_DAYS=7
       

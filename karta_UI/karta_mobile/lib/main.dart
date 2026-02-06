@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
 import 'providers/reviews_provider.dart';
+import 'providers/notification_provider.dart' as mobile_notif;
 const bool isDemoMode = false;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,8 +17,11 @@ void main() async {
   } catch (e) {
     print('Warning: Could not load .env file, using hardcoded values');
   }
-  stripe.Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? 
-      'pk_test_51S1vuqRtea3eAVbD0w930SERvYaN3agPwsDCxH0Dl5sCe5fxUPcujcWSL4LZDyNNG3eADETOL5DhdxSEqXvuwnHJ00RuqVEpYt';
+  final stripeKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'];
+  if (stripeKey == null || stripeKey.isEmpty) {
+    throw Exception('STRIPE_PUBLISHABLE_KEY is not set in .env file');
+  }
+  stripe.Stripe.publishableKey = stripeKey;
   stripe.Stripe.merchantIdentifier = 'merchant.com.karta.ba';
   await initializeDateFormatting('bs', null);
   ApiClient.clientType = 'karta_mobile';
@@ -74,6 +78,10 @@ class KartaMobileApp extends StatelessWidget {
         ChangeNotifierProxyProvider<AuthProvider, ReviewsProvider>(
           create: (context) => ReviewsProvider(context.read<AuthProvider>()),
           update: (context, auth, previous) => previous ?? ReviewsProvider(auth),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, mobile_notif.NotificationProvider>(
+          create: (context) => mobile_notif.NotificationProvider(context.read<AuthProvider>()),
+          update: (context, auth, previous) => previous ?? mobile_notif.NotificationProvider(auth),
         ),
       ],
       child: Consumer<AuthProvider>(

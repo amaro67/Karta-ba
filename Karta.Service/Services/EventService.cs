@@ -13,9 +13,11 @@ namespace Karta.Service.Services
     public class EventService : IEventService
     {
         private readonly ApplicationDbContext _context;
-        public EventService(ApplicationDbContext context)
+        private readonly INotificationService _notificationService;
+        public EventService(ApplicationDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
         public async Task<PagedResult<EventDto>> GetEventsAsync(string? query, string? category, string? city,
             DateTimeOffset? from, DateTimeOffset? to, int page, int size, CancellationToken ct = default)
@@ -393,6 +395,26 @@ namespace Karta.Service.Services
             if (req.CoverImageUrl != null)
                 eventEntity.CoverImageUrl = req.CoverImageUrl;
             await _context.SaveChangesAsync(ct);
+
+            // Notify ticket holders about event changes
+            try
+            {
+                var ticketHolderIds = await _context.Tickets
+                    .Include(t => t.OrderItem).ThenInclude(oi => oi.Order)
+                    .Where(t => t.OrderItem.Order.Status == "Paid" && t.Status == "Issued"
+                        && _context.OrderItems.Any(oi => oi.Id == t.OrderItemId && oi.EventId == id))
+                    .Select(t => t.OrderItem.Order.UserId)
+                    .Distinct()
+                    .ToListAsync(ct);
+                foreach (var holderId in ticketHolderIds)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        holderId, "Događaj ažuriran",
+                        $"Događaj \"{eventEntity.Title}\" je ažuriran. Provjerite detalje.",
+                        "EventChange", id, "Event", ct);
+                }
+            }
+            catch { /* Don't fail the operation if notification fails */ }
 
             // Reload navigation properties
             await _context.Entry(eventEntity).Reference(e => e.CategoryRef).LoadAsync(ct);

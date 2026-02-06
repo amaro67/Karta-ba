@@ -7,7 +7,10 @@ import '../models/auth/register_request.dart';
 import '../models/auth/auth_response.dart';
 import '../models/auth/refresh_token_request.dart';
 class ApiClient {
+  static const String _dartDefineUrl = String.fromEnvironment('API_URL');
+
   static String get baseUrl {
+    if (_dartDefineUrl.isNotEmpty) return _dartDefineUrl;
     if (kIsWeb) {
       return 'http://localhost:8080';
     } else if (Platform.isAndroid) {

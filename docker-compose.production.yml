@@ -44,7 +44,7 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       
       # Connection string za SQL Server
-      - CONNECTION_STRING=Server=sqlserver,1433;Database=KartaDb;User Id=sa;Password=${SQLSERVER_SA_PASSWORD};TrustServerCertificate=true;MultipleActiveResultSets=true;
+      - CONNECTION_STRING=Server=sqlserver,1433;Database=IB210242;User Id=sa;Password=${SQLSERVER_SA_PASSWORD};TrustServerCertificate=true;MultipleActiveResultSets=true;
       
       # JWT konfiguracija - PROMENITE OVE VREDNOSTI!
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}

@@ -8,6 +8,7 @@ import '../../widgets/event_card.dart';
 import '../../widgets/category_button.dart';
 import '../../widgets/popular_events_carousel.dart';
 import '../../services/viewed_events_service.dart';
+import '../../providers/notification_provider.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -199,7 +200,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _loadEvents();
       }
       _loadFavorites();
+      _loadUnreadNotifications();
     });
+  }
+
+  Future<void> _loadUnreadNotifications() async {
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.isAuthenticated) {
+      final notifProvider = context.read<NotificationProvider>();
+      await notifProvider.loadUnreadCount();
+    }
   }
 
   Future<void> _loadFavorites() async {
@@ -362,6 +372,44 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ),
               actions: [
+                Consumer<NotificationProvider>(
+                  builder: (context, notifProvider, _) {
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.notifications_outlined),
+                          onPressed: () {
+                            Navigator.pushNamed(context, AppRoutes.notifications).then((_) {
+                              notifProvider.loadUnreadCount();
+                            });
+                          },
+                        ),
+                        if (notifProvider.unreadCount > 0)
+                          Positioned(
+                            right: 6,
+                            top: 6,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                              child: Center(
+                                child: Text(
+                                  notifProvider.unreadCount > 99 ? '99+' : notifProvider.unreadCount.toString(),
+                                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
                 IconButton(
                   icon: const Icon(Icons.menu),
                   onPressed: () {

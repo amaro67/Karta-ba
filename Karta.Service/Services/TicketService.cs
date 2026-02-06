@@ -14,10 +14,12 @@ namespace Karta.Service.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IEmailService _emailService;
-        public TicketService(ApplicationDbContext context, IEmailService emailService)
+        private readonly INotificationService _notificationService;
+        public TicketService(ApplicationDbContext context, IEmailService emailService, INotificationService notificationService)
         {
             _context = context;
             _emailService = emailService;
+            _notificationService = notificationService;
         }
         public async Task<IReadOnlyList<TicketDto>> GetMyTicketsAsync(string userId, CancellationToken ct = default)
         {
@@ -221,6 +223,16 @@ namespace Karta.Service.Services
                     customerEmail,
                     ct);
             }
+
+            // Create in-app notification
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    userId, "Karta otkazana",
+                    $"Vaša karta {ticket.TicketCode} za {eventName} je otkazana.",
+                    "TicketCancelled", ticket.Id, "Ticket", ct);
+            }
+            catch { /* Don't fail the operation if notification fails */ }
 
             return new TicketDto(
                 ticket.Id,

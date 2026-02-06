@@ -22,6 +22,7 @@ namespace Karta.Model
         public DbSet<Venue> Venues { get; set; }
         public DbSet<UserFavorite> UserFavorites { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -371,6 +372,37 @@ namespace Karta.Model
                 // One review per user per event
                 entity.HasIndex(e => new { e.UserId, e.EventId }).IsUnique();
                 entity.HasIndex(e => e.EventId);
+            });
+
+            builder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UserId)
+                    .IsRequired()
+                    .HasMaxLength(450);
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(200);
+                entity.Property(e => e.Content)
+                    .IsRequired()
+                    .HasMaxLength(2000);
+                entity.Property(e => e.Type)
+                    .IsRequired();
+                entity.Property(e => e.IsRead)
+                    .IsRequired()
+                    .HasDefaultValue(false);
+                entity.Property(e => e.RelatedEntityType)
+                    .HasMaxLength(50);
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired();
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.IsRead);
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => new { e.UserId, e.IsRead });
             });
         }
     }

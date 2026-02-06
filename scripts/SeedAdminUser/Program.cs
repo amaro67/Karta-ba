@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
-    ?? "Server=localhost,1433;Database=KartaDb;User Id=sa;Password=KartaPassword2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;";
+    ?? "Server=localhost,1433;Database=IB210242;User Id=sa;Password=KartaPassword2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;";
 
 var services = new ServiceCollection();
 

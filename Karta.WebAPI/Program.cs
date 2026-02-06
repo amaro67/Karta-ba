@@ -113,6 +113,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IVenueService, VenueService>();
 builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 // Always use RabbitMQ for email queuing
 builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
 builder.Services.AddScoped<ValidationFilterAttribute>();
@@ -252,12 +253,6 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Karta.ba API v1");
     c.RoutePrefix = "swagger";
     c.DocumentTitle = "Karta.ba API Documentation";
-});
-app.UseWhen(context => 
-    !context.Request.Path.StartsWithSegments("/api/order/webhook") &&
-    !context.Request.Path.StartsWithSegments("/api/Event/upload-image"), app =>
-{
-    app.UseHttpsRedirection();
 });
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseRateLimiter();

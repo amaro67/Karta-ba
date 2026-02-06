@@ -7,7 +7,7 @@ import '../model/auth/auth_response.dart';
 import '../model/auth/refresh_token_request.dart';
 import '../models/review_dto.dart';
 class ApiClient {
-  static const String baseUrl = 'http://localhost:8080';
+  static const String baseUrl = String.fromEnvironment('API_URL', defaultValue: 'http://localhost:8080');
   static const String apiPrefix = '/api';
   static final http.Client _client = http.Client();
   static Map<String, String> _getHeaders({String? token, bool includeClientType = false}) {

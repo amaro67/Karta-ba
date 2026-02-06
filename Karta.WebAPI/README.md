@@ -90,7 +90,7 @@ Otvorite `appsettings.Development.json` i ažurirajte connection string:
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost,1433;Database=KartaDb;User Id=sa;Password=VašaJakaSifra123!;TrustServerCertificate=true;MultipleActiveResultSets=true;"
+    "DefaultConnection": "Server=localhost,1433;Database=IB210242;User Id=sa;Password=VašaJakaSifra123!;TrustServerCertificate=true;MultipleActiveResultSets=true;"
   }
 }
 ```
@@ -99,7 +99,7 @@ Otvorite `appsettings.Development.json` i ažurirajte connection string:
 - Zamijenite `VašaJakaSifra123!` sa stvarnom lozinkom vašeg SQL Server-a
 - Ako koristite Windows Authentication, connection string izgleda ovako:
   ```
-  Server=localhost;Database=KartaDb;Integrated Security=true;TrustServerCertificate=true;
+  Server=localhost;Database=IB210242;Integrated Security=true;TrustServerCertificate=true;
   ```
 
 ### 3. Konfiguracija JWT tokena
@@ -218,7 +218,7 @@ dotnet ef database update
 
 **Provjera:**
 - Poveže se na SQL Server koristeći SQL Server Management Studio (SSMS) ili Azure Data Studio
-- Provjerite da li postoji baza `KartaDb` sa tabelama
+- Provjerite da li postoji baza `IB210242` sa tabelama
 
 ---
 
@@ -353,7 +353,7 @@ Umjesto appsettings fajla, možete koristiti environment variables:
 
 ```bash
 # Primjer za connection string
-export CONNECTION_STRING="Server=localhost,1433;Database=KartaDb;User Id=sa;Password=YourPass123!;TrustServerCertificate=true;"
+export CONNECTION_STRING="Server=localhost,1433;Database=IB210242;User Id=sa;Password=YourPass123!;TrustServerCertificate=true;"
 
 # Pokrenite aplikaciju
 dotnet run
@@ -390,7 +390,7 @@ dotnet run
 **Rješenje:**
 Dodajte `TrustServerCertificate=true` u connection string:
 ```json
-"Server=localhost,1433;Database=KartaDb;User Id=sa;Password=YourPass;TrustServerCertificate=true;"
+"Server=localhost,1433;Database=IB210242;User Id=sa;Password=YourPass;TrustServerCertificate=true;"
 ```
 
 ### Problem: "Build failed" ili missing dependencies

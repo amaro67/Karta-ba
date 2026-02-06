@@ -653,11 +653,11 @@ namespace Karta.WebAPI.Services
                 logger.LogInformation($"Test organizator {existingOrganizer.Email} već postoji.");
             }
 
-            // Scanner
-            var existingScanner = await userManager.FindByEmailAsync("adil+2@edu.fit.ba");
-            if (existingScanner == null)
+            // Admin 2
+            var existingAdmin2 = await userManager.FindByEmailAsync("adil+2@edu.fit.ba");
+            if (existingAdmin2 == null)
             {
-                var testScanner = new ApplicationUser
+                var testAdmin2 = new ApplicationUser
                 {
                     UserName = "adil+2@edu.fit.ba",
                     Email = "adil+2@edu.fit.ba",
@@ -666,22 +666,22 @@ namespace Karta.WebAPI.Services
                     LastName = "Joldic",
                     CreatedAt = DateTime.UtcNow.AddDays(-3)
                 };
-                var scannerResult = await userManager.CreateAsync(testScanner, password);
-                if (scannerResult.Succeeded)
+                var admin2Result = await userManager.CreateAsync(testAdmin2, password);
+                if (admin2Result.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(testScanner, "Scanner");
-                    users.Add(testScanner);
-                    logger.LogInformation($"Kreiran test scanner: {testScanner.Email}");
+                    await userManager.AddToRoleAsync(testAdmin2, "Admin");
+                    users.Add(testAdmin2);
+                    logger.LogInformation($"Kreiran test admin: {testAdmin2.Email}");
                 }
                 else
                 {
-                    logger.LogWarning($"Nije moguće kreirati test scannera {testScanner.Email}: {string.Join(", ", scannerResult.Errors.Select(e => e.Description))}");
+                    logger.LogWarning($"Nije moguće kreirati test admina {testAdmin2.Email}: {string.Join(", ", admin2Result.Errors.Select(e => e.Description))}");
                 }
             }
             else
             {
-                users.Add(existingScanner);
-                logger.LogInformation($"Test scanner {existingScanner.Email} već postoji.");
+                users.Add(existingAdmin2);
+                logger.LogInformation($"Test admin {existingAdmin2.Email} već postoji.");
             }
 
             return users;

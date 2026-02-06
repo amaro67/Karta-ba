@@ -6,7 +6,7 @@
 echo "🌱 Seeding admin user..."
 
 # Set connection string
-export CONNECTION_STRING="${CONNECTION_STRING:-Server=localhost,1433;Database=KartaDb;User Id=sa;Password=KartaPassword2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;}"
+export CONNECTION_STRING="${CONNECTION_STRING:-Server=localhost,1433;Database=IB210242;User Id=sa;Password=KartaPassword2024!;TrustServerCertificate=true;MultipleActiveResultSets=true;}"
 
 # Check if SQL Server is running (if using Docker)
 if command -v docker &> /dev/null && docker ps | grep -q karta-sqlserver; then

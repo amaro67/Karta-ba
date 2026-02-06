@@ -58,6 +58,7 @@ Sistem podržava tri tipa korisnika sa različitim pravima pristupa.
 | Email | Lozinka |
 |-------|---------|
 | `amar.omerovic0607@gmail.com` | `Password123!` |
+| `adil+2@edu.fit.ba` | `Password123!` |
 
 ---
 
@@ -107,7 +108,7 @@ Sistem podržava tri tipa korisnika sa različitim pravima pristupa.
 | Port | `1433` |
 | User | `sa` |
 | Password | `KartaPassword2024!` |
-| Database | `KartaDb` |
+| Database | `IB210242` |
 
 ### Resetovanje baze
 

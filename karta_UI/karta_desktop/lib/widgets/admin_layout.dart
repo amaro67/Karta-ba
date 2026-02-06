@@ -14,6 +14,9 @@ import '../screens/admin/user_management_screen.dart';
 import '../screens/admin/event_management_screen.dart';
 import '../screens/admin/order_management_screen.dart';
 import '../screens/admin/ticket_management_screen.dart';
+import '../screens/admin/category_management_screen.dart';
+import '../screens/admin/venue_management_screen.dart';
+import '../screens/admin/notification_management_screen.dart';
 import '../config/theme.dart';
 import '../utils/api_client.dart';
 class AdminLayout extends StatefulWidget {
@@ -66,6 +69,12 @@ class _AdminLayoutState extends State<AdminLayout> {
         return const OrderManagementScreen();
       case 4:
         return const TicketManagementScreen();
+      case 5:
+        return const CategoryManagementScreen();
+      case 6:
+        return const VenueManagementScreen();
+      case 7:
+        return const NotificationManagementScreen();
       default:
         return AdminDashboardContent(
           onSeeAllEvents: () => _navigateToIndex(2),
@@ -376,6 +385,12 @@ class _AdminLayoutState extends State<AdminLayout> {
         return 'Order Management';
       case 4:
         return 'Ticket Management';
+      case 5:
+        return 'Categories';
+      case 6:
+        return 'Venues';
+      case 7:
+        return 'Notifications';
       default:
         return 'Dashboard';
     }
