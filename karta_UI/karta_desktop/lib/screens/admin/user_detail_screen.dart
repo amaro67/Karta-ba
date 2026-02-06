@@ -914,7 +914,9 @@ class _OrganizerProfileStatsPanelState extends State<_OrganizerProfileStatsPanel
     if (!_initialized) {
       final organizerProvider = Provider.of<OrganizerProvider>(context, listen: false);
       if (!organizerProvider.isLoadingMyEvents && organizerProvider.myEvents.isEmpty) {
-        organizerProvider.loadMyEvents();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          organizerProvider.loadMyEvents();
+        });
       }
       _initialized = true;
     }

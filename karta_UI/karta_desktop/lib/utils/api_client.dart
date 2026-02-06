@@ -408,6 +408,7 @@ class ApiClient {
       print('🔵 ApiClient.post: Response body: ${response.body}');
       
       if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.body.isEmpty) return {};
         return jsonDecode(response.body);
       } else {
         String errorMessage = 'Request failed (Status: ${response.statusCode})';
@@ -981,8 +982,9 @@ class ApiClient {
     }
   }
   // Categories
-  static Future<List<dynamic>> getCategories() async {
-    return await getList('/Category');
+  static Future<List<dynamic>> getCategories({bool includeInactive = false, String? token}) async {
+    final query = includeInactive ? '?includeInactive=true' : '';
+    return await getList('/Category$query', token: token);
   }
 
   // Venues

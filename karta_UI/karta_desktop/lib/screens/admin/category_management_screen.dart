@@ -139,8 +139,6 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   void _showCategoryDialog(BuildContext context, {CategoryDto? category}) {
     final nameController = TextEditingController(text: category?.name ?? '');
     final descController = TextEditingController(text: category?.description ?? '');
-    final iconUrlController = TextEditingController(text: category?.iconUrl ?? '');
-    final orderController = TextEditingController(text: '${category?.displayOrder ?? 0}');
     bool isActive = category?.isActive ?? true;
     final formKey = GlobalKey<FormState>();
 
@@ -168,17 +166,6 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                     maxLines: 2,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: iconUrlController,
-                    decoration: const InputDecoration(labelText: 'Icon URL (optional)', border: OutlineInputBorder()),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: orderController,
-                    decoration: const InputDecoration(labelText: 'Display Order', border: OutlineInputBorder()),
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 12),
                   SwitchListTile(
                     title: const Text('Active'),
                     value: isActive,
@@ -198,8 +185,8 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                 final data = {
                   'name': nameController.text,
                   'description': descController.text,
-                  'iconUrl': iconUrlController.text,
-                  'displayOrder': int.tryParse(orderController.text) ?? 0,
+                  'iconUrl': category?.iconUrl ?? '/icons/default-category.png',
+                  'displayOrder': category?.displayOrder ?? 0,
                   'isActive': isActive,
                 };
                 try {

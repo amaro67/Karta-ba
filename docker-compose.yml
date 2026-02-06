@@ -47,7 +47,7 @@ services:
       - EMAIL_SMTP_HOST=smtp.gmail.com
       - EMAIL_SMTP_PORT=587
       - EMAIL_SMTP_USERNAME=amar.omerovic0607@gmail.com
-      - EMAIL_SMTP_PASSWORD=ylej bqxm fnol bghi
+      - EMAIL_SMTP_PASSWORD=dkwz jmjz xnex rgth
       # RabbitMQ konfiguracija
       - RabbitMQ__HostName=rabbitmq
       - RabbitMQ__Port=5672
@@ -140,7 +140,7 @@ services:
       - EMAIL_SMTP_HOST=smtp.gmail.com
       - EMAIL_SMTP_PORT=587
       - EMAIL_SMTP_USERNAME=amar.omerovic0607@gmail.com
-      - EMAIL_SMTP_PASSWORD=ylej bqxm fnol bghi
+      - EMAIL_SMTP_PASSWORD=dkwz jmjz xnex rgth
       - EMAIL_ENABLE_SSL=true
     volumes:
       - ./logs/worker:/app/logs

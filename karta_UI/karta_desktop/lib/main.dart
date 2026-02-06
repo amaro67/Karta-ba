@@ -28,7 +28,14 @@ class KartaDesktopApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => CategoriesProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, CategoriesProvider>(
+          create: (_) => CategoriesProvider(),
+          update: (_, authProvider, categoriesProvider) {
+            categoriesProvider ??= CategoriesProvider();
+            categoriesProvider.setToken(authProvider.accessToken);
+            return categoriesProvider;
+          },
+        ),
         ChangeNotifierProxyProvider<AuthProvider, VenuesProvider>(
           create: (_) => VenuesProvider(),
           update: (_, authProvider, venuesProvider) {

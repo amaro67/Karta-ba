@@ -41,11 +41,16 @@ class CategoriesProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   DateTime? _lastFetch;
+  String? _token;
 
   List<CategoryDto> get categories => _categories;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasCategories => _categories.isNotEmpty;
+
+  void setToken(String? token) {
+    _token = token;
+  }
 
   // Cache duration: 5 minutes
   static const _cacheDuration = Duration(minutes: 5);
@@ -65,7 +70,7 @@ class CategoriesProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final data = await ApiClient.getCategories();
+      final data = await ApiClient.getCategories(includeInactive: true, token: _token);
       _categories = data.map((item) => CategoryDto.fromJson(item as Map<String, dynamic>)).toList();
       // Sort by displayOrder
       _categories.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
